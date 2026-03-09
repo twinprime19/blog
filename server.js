@@ -11,6 +11,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // HTML-escape to prevent stored XSS from DB values
 const esc = (s) => s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
 
+// Normalize Unicode to NFC — prevents NFD decomposition gaps in Vietnamese text
+const nfc = (s) => s ? String(s).normalize('NFC') : s;
+
 // Sanitize marked output — strip raw HTML tags from markdown
 marked.use({ renderer: { html: () => '' } });
 
@@ -73,7 +76,7 @@ app.post('/api/posts', requireAuth, async (c) => {
     const result = db.prepare(`
       INSERT INTO posts (slug, title, subtitle, content, content_vi, title_vi, subtitle_vi, author, cover_image, status)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(finalSlug, title, subtitle || null, content, content_vi || null, title_vi || null, subtitle_vi || null, author || 'Anonymous', cover_image || null, status || 'published');
+    `).run(finalSlug, nfc(title), nfc(subtitle), nfc(content), nfc(content_vi), nfc(title_vi), nfc(subtitle_vi), nfc(author) || 'Anonymous', cover_image || null, status || 'published');
     return c.json({ id: result.lastInsertRowid, slug: finalSlug }, 201);
   } catch (e) {
     if (e.message.includes('UNIQUE')) return c.json({ error: 'Slug already exists' }, 409);
@@ -87,8 +90,9 @@ app.put('/api/posts/:slug', requireAuth, async (c) => {
   if (!existing) return c.json({ error: 'Not found' }, 404);
   const fields = [];
   const values = [];
+  const textFields = new Set(['title', 'subtitle', 'content', 'content_vi', 'title_vi', 'subtitle_vi', 'author']);
   for (const key of ['title', 'subtitle', 'content', 'content_vi', 'title_vi', 'subtitle_vi', 'author', 'cover_image', 'status']) {
-    if (body[key] !== undefined) { fields.push(`${key} = ?`); values.push(body[key]); }
+    if (body[key] !== undefined) { fields.push(`${key} = ?`); values.push(textFields.has(key) ? nfc(body[key]) : body[key]); }
   }
   if (fields.length === 0) return c.json({ error: 'No fields to update' }, 400);
   fields.push("updated_at = datetime('now')");
@@ -110,12 +114,15 @@ const layout = (title, body, meta = '') => `<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <title>${esc(title)}</title>
 ${meta}
 <style>
   :root { --bg: #fff; --text: #1a1a1a; --muted: #6b6b6b; --border: #e6e6e6; --accent: #ff6719; --max-w: 680px; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Georgia', 'Charter', serif; color: var(--text); background: var(--bg); line-height: 1.7; }
+  body { font-family: 'Noto Serif', 'Times New Roman', 'Georgia', serif; color: var(--text); background: var(--bg); line-height: 1.7; }
   a { color: var(--accent); text-decoration: none; }
   a:hover { text-decoration: underline; }
 
