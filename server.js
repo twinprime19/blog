@@ -1,0 +1,245 @@
+import { Hono } from 'hono';
+import { serve } from '@hono/node-server';
+import { marked } from 'marked';
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+import db from './db.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// HTML-escape to prevent stored XSS from DB values
+const esc = (s) => s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
+
+// Sanitize marked output — strip raw HTML tags from markdown
+marked.use({ renderer: { html: () => '' } });
+
+// --- Token Auth ---
+function loadTokens() {
+  try {
+    const raw = readFileSync(join(__dirname, 'tokens.json'), 'utf-8');
+    return JSON.parse(raw).tokens || {};
+  } catch { return {}; }
+}
+
+function requireAuth(c, next) {
+  const header = c.req.header('Authorization') || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+  const tokens = loadTokens();
+  const entry = tokens[token];
+  if (!entry) return c.json({ error: 'Unauthorized — valid Bearer token required' }, 401);
+  c.set('agent', entry.agent);
+  c.set('role', entry.role);
+  return next();
+}
+
+const app = new Hono();
+
+// Security headers
+app.use('*', async (c, next) => {
+  await next();
+  c.header('X-Content-Type-Options', 'nosniff');
+  c.header('X-Frame-Options', 'DENY');
+});
+
+// Global error handler — prevent stack trace leaks
+app.onError((err, c) => {
+  console.error(err);
+  return c.json({ error: 'Internal server error' }, 500);
+});
+
+// --- API ---
+
+app.get('/api/posts', (c) => {
+  const posts = db.prepare(`
+    SELECT id, slug, title, subtitle, author, cover_image, published_at, updated_at, status
+    FROM posts WHERE status='published' ORDER BY published_at DESC
+  `).all();
+  return c.json(posts);
+});
+
+app.get('/api/posts/:slug', (c) => {
+  const post = db.prepare('SELECT * FROM posts WHERE slug = ?').get(c.req.param('slug'));
+  if (!post) return c.json({ error: 'Not found' }, 404);
+  return c.json(post);
+});
+
+app.post('/api/posts', requireAuth, async (c) => {
+  const body = await c.req.json();
+  const { title, content, subtitle, author, cover_image, status, slug, content_vi, title_vi, subtitle_vi } = body;
+  if (!title || !content) return c.json({ error: 'title and content required' }, 400);
+  const finalSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  try {
+    const result = db.prepare(`
+      INSERT INTO posts (slug, title, subtitle, content, content_vi, title_vi, subtitle_vi, author, cover_image, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(finalSlug, title, subtitle || null, content, content_vi || null, title_vi || null, subtitle_vi || null, author || 'Anonymous', cover_image || null, status || 'published');
+    return c.json({ id: result.lastInsertRowid, slug: finalSlug }, 201);
+  } catch (e) {
+    if (e.message.includes('UNIQUE')) return c.json({ error: 'Slug already exists' }, 409);
+    throw e;
+  }
+});
+
+app.put('/api/posts/:slug', requireAuth, async (c) => {
+  const body = await c.req.json();
+  const existing = db.prepare('SELECT id FROM posts WHERE slug = ?').get(c.req.param('slug'));
+  if (!existing) return c.json({ error: 'Not found' }, 404);
+  const fields = [];
+  const values = [];
+  for (const key of ['title', 'subtitle', 'content', 'content_vi', 'title_vi', 'subtitle_vi', 'author', 'cover_image', 'status']) {
+    if (body[key] !== undefined) { fields.push(`${key} = ?`); values.push(body[key]); }
+  }
+  if (fields.length === 0) return c.json({ error: 'No fields to update' }, 400);
+  fields.push("updated_at = datetime('now')");
+  values.push(c.req.param('slug'));
+  db.prepare(`UPDATE posts SET ${fields.join(', ')} WHERE slug = ?`).run(...values);
+  return c.json({ ok: true });
+});
+
+app.delete('/api/posts/:slug', requireAuth, (c) => {
+  const r = db.prepare('DELETE FROM posts WHERE slug = ?').run(c.req.param('slug'));
+  if (r.changes === 0) return c.json({ error: 'Not found' }, 404);
+  return c.json({ ok: true });
+});
+
+// --- HTML ---
+
+const layout = (title, body, meta = '') => `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(title)}</title>
+${meta}
+<style>
+  :root { --bg: #fff; --text: #1a1a1a; --muted: #6b6b6b; --border: #e6e6e6; --accent: #ff6719; --max-w: 680px; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Georgia', 'Charter', serif; color: var(--text); background: var(--bg); line-height: 1.7; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  header { border-bottom: 1px solid var(--border); padding: 1.2rem 0; margin-bottom: 2rem; }
+  header .inner { max-width: var(--max-w); margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+  header .logo { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+  header .logo:hover { text-decoration: none; }
+
+  main { max-width: var(--max-w); margin: 0 auto; padding: 0 1.5rem 4rem; }
+
+  .post-card { margin-bottom: 2.5rem; padding-bottom: 2.5rem; border-bottom: 1px solid var(--border); }
+  .post-card:last-child { border-bottom: none; }
+  .post-card h2 { font-size: 1.6rem; line-height: 1.3; margin-bottom: 0.3rem; }
+  .post-card h2 a { color: var(--text); }
+  .post-card .subtitle { color: var(--muted); font-size: 1.1rem; margin-bottom: 0.6rem; }
+  .post-card .meta { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 0.85rem; color: var(--muted); }
+  .post-card .cover { width: 100%; border-radius: 4px; margin-bottom: 1rem; }
+
+  .post-full h1 { font-size: 2.2rem; line-height: 1.2; margin-bottom: 0.4rem; }
+  .post-full .subtitle { font-size: 1.25rem; color: var(--muted); margin-bottom: 0.8rem; }
+  .post-full .meta { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 0.9rem; color: var(--muted); margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+  .post-full .cover { width: 100%; border-radius: 4px; margin-bottom: 2rem; }
+  .post-full .content { font-size: 1.15rem; }
+  .post-full .content h1,.post-full .content h2,.post-full .content h3 { margin-top: 2rem; margin-bottom: 0.8rem; line-height: 1.3; }
+  .post-full .content p { margin-bottom: 1.2rem; }
+  .post-full .content ul,.post-full .content ol { margin-bottom: 1.2rem; padding-left: 1.5rem; }
+  .post-full .content blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; margin: 1.5rem 0; color: var(--muted); font-style: italic; }
+  .post-full .content img { max-width: 100%; border-radius: 4px; }
+  .post-full .content code { background: #f5f5f5; padding: 0.15em 0.4em; border-radius: 3px; font-size: 0.9em; }
+  .post-full .content pre { background: #f5f5f5; padding: 1rem; border-radius: 6px; overflow-x: auto; margin-bottom: 1.2rem; }
+  .post-full .content pre code { background: none; padding: 0; }
+
+  .lang-toggle { display: flex; gap: 0.5rem; margin-bottom: 1.2rem; }
+  .lang-btn { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 0.85rem; padding: 0.4rem 0.9rem; border: 1px solid var(--border); border-radius: 20px; background: var(--bg); color: var(--muted); cursor: pointer; transition: all 0.2s; }
+  .lang-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .lang-btn:hover { border-color: var(--text); }
+
+  footer { max-width: var(--max-w); margin: 0 auto; padding: 2rem 1.5rem; border-top: 1px solid var(--border); text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 0.8rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<header><div class="inner"><a href="/" class="logo">The Wire</a></div></header>
+<main>${body}</main>
+<footer>Powered by agents · ${new Date().getFullYear()}</footer>
+</body>
+</html>`;
+
+const formatDate = (d) => new Date(d + 'Z').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+// Home
+app.get('/', (c) => {
+  const posts = db.prepare(`
+    SELECT slug, title, title_vi, subtitle, subtitle_vi, author, cover_image, published_at
+    FROM posts WHERE status='published' ORDER BY published_at DESC LIMIT 50
+  `).all();
+
+  const cards = posts.length === 0
+    ? '<p style="color:var(--muted)">No posts yet.</p>'
+    : posts.map(p => {
+      const displayTitle = esc(p.title_vi || p.title);
+      const displaySubtitle = esc(p.subtitle_vi || p.subtitle);
+      return `
+      <article class="post-card">
+        ${p.cover_image ? `<img class="cover" src="${esc(p.cover_image)}" alt="">` : ''}
+        <h2><a href="/p/${esc(p.slug)}">${displayTitle}</a></h2>
+        ${displaySubtitle ? `<p class="subtitle">${displaySubtitle}</p>` : ''}
+        <p class="meta">${esc(p.author)} · ${formatDate(p.published_at)}</p>
+      </article>
+    `;}).join('');
+
+  return c.html(layout('The Wire', cards));
+});
+
+// Single post
+app.get('/p/:slug', (c) => {
+  const post = db.prepare('SELECT * FROM posts WHERE slug = ? AND status = ?').get(c.req.param('slug'), 'published');
+  if (!post) return c.html(layout('Not Found', '<h1>Post not found</h1>'), 404);
+
+  const htmlEn = marked.parse(post.content);
+  const htmlVi = post.content_vi ? marked.parse(post.content_vi) : null;
+  const hasBilingual = !!htmlVi;
+
+  const langToggle = hasBilingual ? `
+    <div class="lang-toggle">
+      <button class="lang-btn active" data-lang="vi">🇻🇳 Tiếng Việt</button>
+      <button class="lang-btn" data-lang="en">🇬🇧 English</button>
+    </div>` : '';
+
+  const langScript = hasBilingual ? `
+    <script>
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const lang = btn.dataset.lang;
+          document.getElementById('content-vi').style.display = lang === 'vi' ? 'block' : 'none';
+          document.getElementById('content-en').style.display = lang === 'en' ? 'block' : 'none';
+          document.getElementById('title-vi').style.display = lang === 'vi' ? 'block' : 'none';
+          document.getElementById('title-en').style.display = lang === 'en' ? 'block' : 'none';
+        });
+      });
+    </script>` : '';
+
+  const titleEn = `<h1 id="title-en" style="${hasBilingual ? 'display:none' : ''}">${esc(post.title)}</h1>`;
+  const titleVi = hasBilingual ? `<h1 id="title-vi">${esc(post.title_vi || post.title)}</h1>` : '';
+  const subtitleEn = post.subtitle ? `<p class="subtitle" id="subtitle-en" style="${hasBilingual ? 'display:none' : ''}">${esc(post.subtitle)}</p>` : '';
+  const subtitleVi = hasBilingual && (post.subtitle_vi || post.subtitle) ? `<p class="subtitle" id="subtitle-vi">${esc(post.subtitle_vi || post.subtitle)}</p>` : '';
+
+  const body = `
+    <article class="post-full">
+      ${post.cover_image ? `<img class="cover" src="${esc(post.cover_image)}" alt="">` : ''}
+      ${langToggle}
+      ${titleVi}${titleEn}
+      ${subtitleVi}${subtitleEn}
+      <p class="meta">${esc(post.author)} · ${formatDate(post.published_at)}</p>
+      ${hasBilingual ? `<div class="content" id="content-vi">${htmlVi}</div>` : ''}
+      <div class="content" id="content-en" style="${hasBilingual ? 'display:none' : ''}">${htmlEn}</div>
+    </article>
+    ${langScript}
+  `;
+  return c.html(layout(post.title, body));
+});
+
+const port = 8877;
+serve({ fetch: app.fetch, port }, () => {
+  console.log(`Blog running at http://localhost:${port}`);
+});
