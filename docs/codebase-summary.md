@@ -43,14 +43,15 @@ CREATE TABLE posts (
   subtitle_vi TEXT,
   content TEXT NOT NULL,
   content_vi TEXT,
-  author TEXT DEFAULT 'Anonymous',
+  author TEXT NOT NULL DEFAULT 'Anonymous',
   cover_image TEXT,
-  status TEXT DEFAULT 'published',   -- 'published' | 'draft'
-  published_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_by TEXT,
+  published_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  status TEXT NOT NULL DEFAULT 'published' CHECK(status IN ('draft','published'))
 );
-CREATE INDEX idx_status ON posts(status);
-CREATE INDEX idx_published_at ON posts(published_at);
+CREATE INDEX IF NOT EXISTS idx_posts_slug ON posts(slug);
+CREATE INDEX IF NOT EXISTS idx_posts_published ON posts(published_at);
 ```
 
 Vietnamese fields (`title_vi`, `content_vi`, `subtitle_vi`) stored alongside English. All text NFC-normalized before insert. Language routing not yet implemented.

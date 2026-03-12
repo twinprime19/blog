@@ -4,9 +4,9 @@ This file provides guidance to OpenCode when working with code in this repositor
 
 ## Project Overview
 
-**Name:** claudekit-engineer
-**Type:** Node.js/TypeScript
-**Description:** A comprehensive boilerplate template for building professional software projects with **CLI Coding Agents** (**Claude Code** and **Open Code**). This template provides a complete development environment with AI-powered agent orchestration, automated workflows, and intelligent project management.
+**Name:** the-wire
+**Type:** Node.js
+**Description:** A lightweight, self-hostable blog engine powered by Hono + SQLite + Marked. Posts are written in Markdown and published via a REST API.
 
 ## Role & Responsibilities
 

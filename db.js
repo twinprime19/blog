@@ -30,7 +30,10 @@ export function createDatabase(dbPath) {
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   db.exec(SCHEMA);
-  // Migrate existing databases: add created_by column if missing
+  // Migrate existing databases: add columns if missing
+  try { db.exec('ALTER TABLE posts ADD COLUMN content_vi TEXT'); } catch {}
+  try { db.exec('ALTER TABLE posts ADD COLUMN title_vi TEXT'); } catch {}
+  try { db.exec('ALTER TABLE posts ADD COLUMN subtitle_vi TEXT'); } catch {}
   try { db.exec('ALTER TABLE posts ADD COLUMN created_by TEXT'); } catch {}
   return db;
 }
