@@ -3,12 +3,8 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const db = new Database(join(__dirname, 'blog.db'));
 
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
-
-db.exec(`
+const SCHEMA = `
   CREATE TABLE IF NOT EXISTS posts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     slug TEXT UNIQUE NOT NULL,
@@ -26,11 +22,15 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_posts_slug ON posts(slug);
   CREATE INDEX IF NOT EXISTS idx_posts_published ON posts(published_at);
-`);
+`;
 
-// Migrate: add Vietnamese columns if they don't exist
-try { db.exec('ALTER TABLE posts ADD COLUMN content_vi TEXT'); } catch {}
-try { db.exec('ALTER TABLE posts ADD COLUMN title_vi TEXT'); } catch {}
-try { db.exec('ALTER TABLE posts ADD COLUMN subtitle_vi TEXT'); } catch {}
+export function createDatabase(dbPath) {
+  const db = new Database(dbPath);
+  db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
+  db.exec(SCHEMA);
+  return db;
+}
 
-export default db;
+const dbPath = process.env.DB_PATH || join(__dirname, 'blog.db');
+export default createDatabase(dbPath);

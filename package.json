@@ -1,20 +1,36 @@
 {
-  "name": "blog",
+  "name": "the-wire",
   "version": "1.0.0",
-  "description": "",
+  "description": "A lightweight, self-hostable blog engine powered by Hono + SQLite + Marked",
   "type": "module",
   "main": "server.js",
   "scripts": {
     "dev": "node --watch server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "blog",
+    "hono",
+    "sqlite",
+    "markdown",
+    "self-hosted",
+    "lightweight"
+  ],
+  "author": "The Wire Contributors",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "@hono/node-server": "^1.19.11",
     "better-sqlite3": "^12.6.2",
+    "dotenv": "^17.3.1",
     "hono": "^4.12.5",
     "marked": "^17.0.4"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.18"
   }
 }

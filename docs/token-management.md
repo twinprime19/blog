@@ -42,13 +42,13 @@ Send the token to the requestor through a secure channel (DM, encrypted message)
 The requestor can test access with:
 
 ```bash
-curl http://172.16.20.20:8877/api/posts
+curl http://localhost:3000/api/posts
 ```
 
 Then try a write operation:
 
 ```bash
-curl -X POST http://172.16.20.20:8877/api/posts \
+curl -X POST http://localhost:3000/api/posts \
   -H "Authorization: Bearer <their-token>" \
   -H "Content-Type: application/json" \
   -d '{"title": "Test Post", "content": "Testing access.", "status": "draft"}'

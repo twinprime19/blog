@@ -1,0 +1,12 @@
+services:
+  blog:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+      - ./tokens.json:/app/tokens.json:ro
+    environment:
+      - PORT=3000
+      - DB_PATH=/app/data/blog.db
+    restart: unless-stopped
