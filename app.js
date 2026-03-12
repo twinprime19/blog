@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { marked } from 'marked';
@@ -8,10 +7,12 @@ import { execFile } from 'child_process';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import db from './db.js';
+import feedRoutes from './feed.js';
+import { port, siteUrl, siteDescription } from './config.js';
+
+export { port };
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
-export const port = parseInt(process.env.PORT || '3000', 10);
 
 // HTML-escape to prevent stored XSS from DB values
 const esc = (s) => s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
@@ -201,6 +202,8 @@ const layout = (title, body, meta = '') => `<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <title>${esc(title)}</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>W</text></svg>">
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml">
 ${meta}
 <style>
   :root { --bg: #fff; --text: #1a1a1a; --muted: #6b6b6b; --border: #e6e6e6; --accent: #ff6719; --max-w: 680px; }
@@ -326,5 +329,14 @@ app.get('/p/:slug', (c) => {
     </article>
     ${langScript}
   `;
-  return c.html(layout(post.title, body));
+  const ogMeta = `
+    <meta property="og:title" content="${esc(post.title)}">
+    <meta property="og:description" content="${esc(post.subtitle || siteDescription)}">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="${siteUrl}/p/${esc(post.slug)}">
+    ${post.cover_image ? `<meta property="og:image" content="${esc(post.cover_image)}">` : ''}`;
+  return c.html(layout(post.title, body, ogMeta));
 });
+
+// --- Feed Routes ---
+app.route('/', feedRoutes);
