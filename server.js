@@ -1,7 +1,9 @@
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { marked } from 'marked';
-import { readFileSync } from 'fs';
+import crypto from 'crypto';
+import { readFileSync, appendFileSync, unlinkSync } from 'fs';
+import { execFile } from 'child_process';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import db from './db.js';
@@ -49,6 +51,47 @@ app.use('*', async (c, next) => {
 app.onError((err, c) => {
   console.error(err);
   return c.json({ error: 'Internal server error' }, 500);
+});
+
+// --- GitHub Webhook ---
+const WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET || '';
+const DEPLOY_SCRIPT = join(__dirname, 'scripts', 'deploy.sh');
+const FAILURE_LOG = join(__dirname, 'deploy-failure.log');
+
+function verifySignature(payload, signature) {
+  if (!WEBHOOK_SECRET || !signature) return false;
+  const expected = 'sha256=' + crypto.createHmac('sha256', WEBHOOK_SECRET).update(payload).digest('hex');
+  try {
+    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+  } catch { return false; }
+}
+
+app.post('/webhook/deploy', async (c) => {
+  const body = await c.req.text();
+  const sig = c.req.header('x-hub-signature-256');
+  if (!verifySignature(body, sig)) return c.json({ error: 'Invalid signature' }, 401);
+
+  const payload = JSON.parse(body);
+  if (payload.ref !== 'refs/heads/main') {
+    return c.json({ ok: true, skipped: true, reason: 'not main branch' });
+  }
+
+  const commitShort = payload.head_commit?.id?.slice(0, 7) || 'unknown';
+  const commitMsg = payload.head_commit?.message?.split('\n')[0] || '';
+  console.log(`[webhook] Deploy triggered by push to main (${commitShort}: ${commitMsg})`);
+
+  execFile('bash', [DEPLOY_SCRIPT], { cwd: __dirname, timeout: 120_000 }, (err, stdout, stderr) => {
+    if (err) {
+      const failMsg = `❌ Blog auto-deploy FAILED\nCommit: ${commitShort} — ${commitMsg}\nError: ${err.message}\n${stderr ? `Stderr: ${stderr.slice(-500)}` : ''}`;
+      console.error(`[webhook]`, failMsg);
+      appendFileSync(FAILURE_LOG, `[${new Date().toISOString()}] ${failMsg}\n---\n`);
+    } else {
+      console.log(`[webhook] Deploy succeeded (${commitShort})`);
+      try { unlinkSync(FAILURE_LOG); } catch {}
+    }
+  });
+
+  return c.json({ ok: true, deploying: true });
 });
 
 // --- API ---
