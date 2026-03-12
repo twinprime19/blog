@@ -1,7 +1,7 @@
 FROM node:20-alpine
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --production
+RUN apk add --no-cache python3 make g++ && npm ci --production
 COPY . .
 RUN mkdir -p /app/data && \
     addgroup -S blog && adduser -S blog -G blog && \

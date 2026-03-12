@@ -157,7 +157,7 @@ pages.get('/p/:slug', (c) => {
     <meta property="og:title" content="${esc(post.title)}">
     <meta property="og:description" content="${esc(post.subtitle || siteDescription)}">
     <meta property="og:type" content="article">
-    <meta property="og:url" content="${siteUrl}/p/${esc(post.slug)}">
+    <meta property="og:url" content="${esc(siteUrl)}/p/${esc(post.slug)}">
     ${post.cover_image ? `<meta property="og:image" content="${esc(post.cover_image)}">` : ''}`;
   return c.html(layout(post.title, body, ogMeta));
 });

@@ -31,7 +31,8 @@ api.get('/api/posts/:slug', (c) => {
 });
 
 api.post('/api/posts', requireAuth, writeLimit, async (c) => {
-  const body = await c.req.json();
+  let body;
+  try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON body' }, 400); }
   const { title, content, subtitle, author, cover_image, status, slug, content_vi, title_vi, subtitle_vi } = body;
   const validationError = validatePost(body);
   if (validationError) return c.json({ error: validationError }, 400);
@@ -58,7 +59,8 @@ api.put('/api/posts/:slug', requireAuth, writeLimit, async (c) => {
   const slug = c.req.param('slug');
   const slugErr = validateSlug(slug);
   if (slugErr) return c.json({ error: slugErr }, 400);
-  const body = await c.req.json();
+  let body;
+  try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON body' }, 400); }
   const updateError = validatePost(body, true);
   if (updateError) return c.json({ error: updateError }, 400);
   const existing = db.prepare('SELECT id FROM posts WHERE slug = ?').get(slug);
