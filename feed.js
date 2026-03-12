@@ -60,9 +60,13 @@ feed.get('/sitemap.xml', (c) => {
     <lastmod>${toDateStr(p.updated_at)}</lastmod>
   </url>`).join('');
 
+  // E6: Add lastmod to homepage from latest post's updated_at
+  const latestUpdated = posts.length > 0 ? toDateStr(posts[0].updated_at) : '';
+  const homepageLastmod = latestUpdated ? `<lastmod>${latestUpdated}</lastmod>` : '';
+
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>${escXml(siteUrl)}</loc></url>${urls}
+  <url><loc>${escXml(siteUrl)}</loc>${homepageLastmod}</url>${urls}
 </urlset>`;
 
   c.header('Content-Type', 'application/xml; charset=utf-8');
