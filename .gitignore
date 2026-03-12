@@ -6,3 +6,6 @@ tokens.json
 .env
 deploy-failure.log
 release-manifest.json
+.claude/
+.opencode/
+.repomixignore
