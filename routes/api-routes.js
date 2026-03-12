@@ -42,11 +42,12 @@ api.post('/api/posts', requireAuth, writeLimit, async (c) => {
     const autoSlugErr = validateSlug(finalSlug);
     if (autoSlugErr) return c.json({ error: `Auto-generated slug is invalid: ${autoSlugErr}` }, 400);
   }
+  const createdBy = c.get('agent');
   try {
     const result = db.prepare(`
-      INSERT INTO posts (slug, title, subtitle, content, content_vi, title_vi, subtitle_vi, author, cover_image, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(finalSlug, nfc(title), nfc(subtitle), nfc(content), nfc(content_vi), nfc(title_vi), nfc(subtitle_vi), nfc(author) || 'Anonymous', cover_image || null, status || 'published');
+      INSERT INTO posts (slug, title, subtitle, content, content_vi, title_vi, subtitle_vi, author, cover_image, status, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(finalSlug, nfc(title), nfc(subtitle), nfc(content), nfc(content_vi), nfc(title_vi), nfc(subtitle_vi), nfc(author) || 'Anonymous', cover_image || null, status || 'published', createdBy);
     return c.json({ id: result.lastInsertRowid, slug: finalSlug }, 201);
   } catch (e) {
     if (e.message.includes('UNIQUE')) return c.json({ error: 'Slug already exists' }, 409);
@@ -63,8 +64,12 @@ api.put('/api/posts/:slug', requireAuth, writeLimit, async (c) => {
   try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON body' }, 400); }
   const updateError = validatePost(body, true);
   if (updateError) return c.json({ error: updateError }, 400);
-  const existing = db.prepare('SELECT id FROM posts WHERE slug = ?').get(slug);
+  const existing = db.prepare('SELECT id, created_by FROM posts WHERE slug = ?').get(slug);
   if (!existing) return c.json({ error: 'Not found' }, 404);
+  // Ownership check: non-admin can only update own posts
+  if (c.get('role') !== 'admin' && existing.created_by !== c.get('agent')) {
+    return c.json({ error: 'You can only update your own posts' }, 403);
+  }
   const fields = [];
   const values = [];
   const textFields = new Set(['title', 'subtitle', 'content', 'content_vi', 'title_vi', 'subtitle_vi', 'author']);
@@ -83,8 +88,13 @@ api.delete('/api/posts/:slug', requireAuth, writeLimit, (c) => {
   const slug = c.req.param('slug');
   const slugErr = validateSlug(slug);
   if (slugErr) return c.json({ error: slugErr }, 400);
-  const r = db.prepare('DELETE FROM posts WHERE slug = ?').run(slug);
-  if (r.changes === 0) return c.json({ error: 'Not found' }, 404);
+  // Ownership check: non-admin can only delete own posts
+  const post = db.prepare('SELECT id, created_by FROM posts WHERE slug = ?').get(slug);
+  if (!post) return c.json({ error: 'Not found' }, 404);
+  if (c.get('role') !== 'admin' && post.created_by !== c.get('agent')) {
+    return c.json({ error: 'You can only delete your own posts' }, 403);
+  }
+  db.prepare('DELETE FROM posts WHERE slug = ?').run(slug);
   return c.json({ ok: true });
 });
 

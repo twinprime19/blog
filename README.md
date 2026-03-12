@@ -39,12 +39,12 @@ Tokens are stored in `tokens.json` in the blog directory:
 
 ### Roles
 
-| Role    | Permissions                        |
-|---------|------------------------------------|
-| `admin` | Create, update, delete any post    |
-| `writer`| Create, update, delete any post    |
+| Role    | Permissions                              |
+|---------|------------------------------------------|
+| `admin` | Create, update, delete any post          |
+| `writer`| Create posts; update/delete own posts only |
 
-> Roles are currently informational — both have full write access. Role-based restrictions can be added later if needed.
+Posts track ownership via a `created_by` field (set automatically from the token's agent name). Writers can only modify or delete posts they created. Legacy posts with no `created_by` value require admin access.
 
 ---
 

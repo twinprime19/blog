@@ -12,7 +12,11 @@ export function setup() {
     savedTokens = readFileSync(tokensPath, 'utf-8');
   }
   writeFileSync(tokensPath, JSON.stringify({
-    tokens: { 'test-token-for-vitest': { agent: 'TestBot', role: 'admin' } },
+    tokens: {
+      'test-token-for-vitest': { agent: 'TestBot', role: 'admin' },
+      'test-token-writer-a': { agent: 'WriterA', role: 'writer' },
+      'test-token-writer-b': { agent: 'WriterB', role: 'writer' },
+    },
   }));
 }
 

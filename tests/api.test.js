@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { app, clearPosts, apiRequest } from './setup.js';
+import { app, clearPosts, apiRequest, WRITER_A_TOKEN, WRITER_B_TOKEN } from './setup.js';
 
 beforeEach(() => clearPosts());
 
@@ -160,6 +160,77 @@ describe('Auth', () => {
   it('allows read endpoints without auth', async () => {
     const res = await app.request('/api/posts');
     expect(res.status).toBe(200);
+  });
+});
+
+describe('Ownership — writer token scoping', () => {
+  // Use distinct X-Forwarded-For per test to avoid shared rate-limit bucket
+  function ownershipRequest(method, path, body, token) {
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'X-Forwarded-For': `ownership-test-${Math.random()}`,
+    };
+    const opts = { method, headers };
+    if (body) opts.body = JSON.stringify(body);
+    return app.request(path, opts);
+  }
+
+  it('writer can delete own post', async () => {
+    const ip = `10.0.0.${Math.floor(Math.random() * 255)}`;
+    const hdrs = (t) => ({ Authorization: `Bearer ${t}`, 'Content-Type': 'application/json', 'X-Forwarded-For': ip });
+    await app.request('/api/posts', { method: 'POST', headers: hdrs(WRITER_A_TOKEN), body: JSON.stringify({ title: 'Writer A Post', content: 'body', slug: 'wa-post' }) });
+    const res = await app.request('/api/posts/wa-post', { method: 'DELETE', headers: hdrs(WRITER_A_TOKEN) });
+    expect(res.status).toBe(200);
+  });
+
+  it('writer cannot delete another writer\'s post', async () => {
+    const ip = `10.0.1.${Math.floor(Math.random() * 255)}`;
+    const hdrs = (t) => ({ Authorization: `Bearer ${t}`, 'Content-Type': 'application/json', 'X-Forwarded-For': ip });
+    await app.request('/api/posts', { method: 'POST', headers: hdrs(WRITER_A_TOKEN), body: JSON.stringify({ title: 'Writer A Post', content: 'body', slug: 'wa-post' }) });
+    const res = await app.request('/api/posts/wa-post', { method: 'DELETE', headers: hdrs(WRITER_B_TOKEN) });
+    expect(res.status).toBe(403);
+  });
+
+  it('writer can update own post', async () => {
+    const ip = `10.0.2.${Math.floor(Math.random() * 255)}`;
+    const hdrs = (t) => ({ Authorization: `Bearer ${t}`, 'Content-Type': 'application/json', 'X-Forwarded-For': ip });
+    await app.request('/api/posts', { method: 'POST', headers: hdrs(WRITER_A_TOKEN), body: JSON.stringify({ title: 'Writer A Post', content: 'body', slug: 'wa-post' }) });
+    const res = await app.request('/api/posts/wa-post', { method: 'PUT', headers: hdrs(WRITER_A_TOKEN), body: JSON.stringify({ title: 'Updated' }) });
+    expect(res.status).toBe(200);
+  });
+
+  it('writer cannot update another writer\'s post', async () => {
+    const ip = `10.0.3.${Math.floor(Math.random() * 255)}`;
+    const hdrs = (t) => ({ Authorization: `Bearer ${t}`, 'Content-Type': 'application/json', 'X-Forwarded-For': ip });
+    await app.request('/api/posts', { method: 'POST', headers: hdrs(WRITER_A_TOKEN), body: JSON.stringify({ title: 'Writer A Post', content: 'body', slug: 'wa-post' }) });
+    const res = await app.request('/api/posts/wa-post', { method: 'PUT', headers: hdrs(WRITER_B_TOKEN), body: JSON.stringify({ title: 'Hacked' }) });
+    expect(res.status).toBe(403);
+  });
+
+  it('admin can delete any writer\'s post', async () => {
+    const ip = `10.0.4.${Math.floor(Math.random() * 255)}`;
+    const hdrs = (t) => ({ Authorization: `Bearer ${t}`, 'Content-Type': 'application/json', 'X-Forwarded-For': ip });
+    await app.request('/api/posts', { method: 'POST', headers: hdrs(WRITER_A_TOKEN), body: JSON.stringify({ title: 'Writer A Post', content: 'body', slug: 'wa-post' }) });
+    const res = await app.request('/api/posts/wa-post', { method: 'DELETE', headers: hdrs('test-token-for-vitest') });
+    expect(res.status).toBe(200);
+  });
+
+  it('admin can update any writer\'s post', async () => {
+    const ip = `10.0.5.${Math.floor(Math.random() * 255)}`;
+    const hdrs = (t) => ({ Authorization: `Bearer ${t}`, 'Content-Type': 'application/json', 'X-Forwarded-For': ip });
+    await app.request('/api/posts', { method: 'POST', headers: hdrs(WRITER_A_TOKEN), body: JSON.stringify({ title: 'Writer A Post', content: 'body', slug: 'wa-post' }) });
+    const res = await app.request('/api/posts/wa-post', { method: 'PUT', headers: hdrs('test-token-for-vitest'), body: JSON.stringify({ title: 'Admin Edit' }) });
+    expect(res.status).toBe(200);
+  });
+
+  it('writer cannot delete legacy post (created_by=NULL)', async () => {
+    const { db } = await import('./setup.js');
+    db.prepare("INSERT INTO posts (slug, title, content, author) VALUES ('legacy', 'Legacy', 'old', 'Admin')").run();
+    const ip = `10.0.6.${Math.floor(Math.random() * 255)}`;
+    const hdrs = (t) => ({ Authorization: `Bearer ${t}`, 'Content-Type': 'application/json', 'X-Forwarded-For': ip });
+    const res = await app.request('/api/posts/legacy', { method: 'DELETE', headers: hdrs(WRITER_A_TOKEN) });
+    expect(res.status).toBe(403);
   });
 });
 

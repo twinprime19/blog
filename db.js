@@ -16,6 +16,7 @@ const SCHEMA = `
     subtitle_vi TEXT,
     author TEXT NOT NULL DEFAULT 'Anonymous',
     cover_image TEXT,
+    created_by TEXT,
     published_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     status TEXT NOT NULL DEFAULT 'published' CHECK(status IN ('draft','published'))
@@ -29,6 +30,8 @@ export function createDatabase(dbPath) {
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   db.exec(SCHEMA);
+  // Migrate existing databases: add created_by column if missing
+  try { db.exec('ALTER TABLE posts ADD COLUMN created_by TEXT'); } catch {}
   return db;
 }
 
