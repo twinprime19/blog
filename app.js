@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { bodyLimit } from 'hono/body-limit';
 import { port } from './config.js';
 import webhookRoutes from './routes/webhook-routes.js';
 import apiRoutes from './routes/api-routes.js';
@@ -15,6 +16,10 @@ const corsOrigin = process.env.CORS_ORIGIN || '*';
 app.use('*', cors({
   origin: corsOrigin === '*' ? '*' : corsOrigin.split(',').map(o => o.trim()).filter(Boolean),
 }));
+
+// Body size limit — reject payloads over 256KB before parsing
+app.post('*', bodyLimit({ maxSize: 256 * 1024, onError: (c) => c.json({ error: 'Payload too large (max 256KB)' }, 413) }));
+app.put('*', bodyLimit({ maxSize: 256 * 1024, onError: (c) => c.json({ error: 'Payload too large (max 256KB)' }, 413) }));
 
 // Security headers including CSP (H4)
 app.use('*', async (c, next) => {

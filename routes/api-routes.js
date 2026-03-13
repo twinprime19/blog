@@ -43,6 +43,11 @@ api.post('/api/posts', requireAuth, writeLimit, async (c) => {
     if (autoSlugErr) return c.json({ error: `Auto-generated slug is invalid: ${autoSlugErr}` }, 400);
   }
   const createdBy = c.get('agent');
+  // Per-token post limit — writers capped at 50 posts, admins exempt
+  if (c.get('role') !== 'admin') {
+    const count = db.prepare('SELECT COUNT(*) as n FROM posts WHERE created_by = ?').get(createdBy).n;
+    if (count >= 50) return c.json({ error: 'Post limit reached (max 50 per agent)' }, 403);
+  }
   try {
     const result = db.prepare(`
       INSERT INTO posts (slug, title, subtitle, content, content_vi, title_vi, subtitle_vi, author, cover_image, status, created_by)
