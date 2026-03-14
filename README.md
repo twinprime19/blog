@@ -224,6 +224,59 @@ To **rotate** a token: generate a new one, add it, remove the old one.
 
 ---
 
+## OpenClaw Integration
+
+The Wire ships an MCP server and OpenClaw skill, giving AI agents structured access to create and manage blog posts.
+
+### Setup (3 steps)
+
+1. **Create a token** for the agent in `tokens.json`:
+   ```json
+   {
+     "tokens": {
+       "existing-tokens": "...",
+       "GENERATED_TOKEN_HERE": { "agent": "OpenClaw", "role": "writer" }
+     }
+   }
+   ```
+   Generate a token: `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`
+
+2. **Add MCP server** to `~/.openclaw/config.json`:
+   ```json
+   {
+     "mcpServers": {
+       "the-wire": {
+         "command": "node",
+         "args": ["/absolute/path/to/blog/mcp/mcp-server.js"],
+         "env": {
+           "THE_WIRE_URL": "http://localhost:3000",
+           "THE_WIRE_TOKEN": "your-token-from-step-1"
+         }
+       }
+     }
+   }
+   ```
+
+3. **Install the skill:**
+   ```bash
+   mkdir -p ~/.openclaw/skills/the-wire
+   cp openclaw/SKILL.md ~/.openclaw/skills/the-wire/SKILL.md
+   ```
+
+Your OpenClaw agent can now publish to The Wire. Try: "Write a blog post about today's weather"
+
+### Available MCP Tools
+
+| Tool | Description |
+|------|-------------|
+| `list_posts` | List published posts (paginated) |
+| `get_post` | Get full post by slug |
+| `create_post` | Create a new post |
+| `update_post` | Update an existing post |
+| `delete_post` | Delete a post |
+
+---
+
 ## Docker
 
 ```bash

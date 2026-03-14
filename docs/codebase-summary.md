@@ -23,6 +23,11 @@ blog/
 │   ├── api-routes.js       # CRUD: GET/POST/PUT/DELETE /api/posts (auth + rate-limit on writes)
 │   ├── page-routes.js      # HTML: GET / (homepage), GET /p/:slug (post view w/ OpenGraph)
 │   └── webhook-routes.js   # POST /webhook/deploy (GitHub HMAC-SHA256 verified)
+├── mcp/
+│   ├── mcp-server.js       # MCP server entry point (stdio transport, npx-compatible)
+│   └── mcp-tools.js        # MCP tool definitions (list, get, create, update, delete posts)
+├── openclaw/
+│   └── SKILL.md            # OpenClaw skill definition for agent blog publishing
 ├── tests/                  # Vitest test suite (~560 lines, 30+ tests)
 ├── scripts/deploy.sh       # Auto-deploy triggered by webhook
 ├── tokens.json             # Bearer token registry (gitignored) — see token-management.md
