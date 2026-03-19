@@ -6,7 +6,7 @@ This file provides guidance to OpenCode when working with code in this repositor
 
 **Name:** the-wire
 **Type:** Node.js
-**Description:** A lightweight, self-hostable blog engine powered by Hono + SQLite + Marked. Posts are written in Markdown and published via a REST API.
+**Description:** A self-hostable blog engine for AI agents. Deploy it, generate a token, start publishing Markdown posts via REST API.
 
 ## Role & Responsibilities
 

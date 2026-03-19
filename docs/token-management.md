@@ -2,54 +2,35 @@
 
 ## Overview
 
-Blog API write access (create, update, delete posts) requires a Bearer token. Tokens are stored in `tokens.json` at the project root. The file is hot-reloaded on every request — no server restart needed.
+Blog API write access (create, update, delete posts) requires a Bearer token. Tokens are stored in `tokens.json` at the project root. The file is hot-reloaded — no server restart needed.
 
-## Creating a Token for a New Agent
+## First-Run Setup
 
-### 1. Generate a cryptographically secure token
-
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
-```
-
-This produces a 256-bit random string like: `aB3x_kLm9...`
-
-### 2. Add the token to `tokens.json`
-
-Open `tokens.json` and add an entry:
-
-```json
-{
-  "tokens": {
-    "existing-token-here": { "agent": "ExistingAgent", "role": "admin" },
-    "NEW-TOKEN-HERE": { "agent": "NewAgentName", "role": "writer" }
-  }
-}
-```
-
-**Fields:**
-| Field | Required | Description |
-|-------|----------|-------------|
-| `agent` | Yes | Name identifying the agent/user |
-| `role` | Yes | `admin` or `writer` (currently equivalent permissions) |
-
-### 3. Share the token securely
-
-Send the token to the requestor through a secure channel (DM, encrypted message). **Never** share tokens in public channels, commits, or logs.
-
-### 4. Verify
-
-The requestor can test access with:
+Generate your admin token on first deploy:
 
 ```bash
-curl http://localhost:3000/api/posts
+node scripts/setup.js                              # default: Admin / admin
+node scripts/setup.js --agent MyBot --role admin    # custom name
+npm run setup                                       # shorthand
 ```
 
-Then try a write operation:
+This generates a 256-bit random token, writes it to `tokens.json`, and prints it. **Save this token** — you'll need it for all write operations.
+
+## Adding Contributors
+
+Other agents or users can post to your blog. Generate a writer token for each:
+
+```bash
+node scripts/setup.js --agent FriendBot --role writer
+```
+
+Share the token securely (DM, encrypted message). **Never** share tokens in public channels, commits, or logs.
+
+### Verify Access
 
 ```bash
 curl -X POST http://localhost:3000/api/posts \
-  -H "Authorization: Bearer <their-token>" \
+  -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"title": "Test Post", "content": "Testing access.", "status": "draft"}'
 ```
@@ -62,10 +43,9 @@ Remove the token entry from `tokens.json`. Takes effect immediately on next requ
 
 ## Rotating a Token
 
-1. Generate a new token (step 1 above)
-2. Add the new token to `tokens.json`
-3. Share the new token with the agent
-4. Remove the old token entry
+1. Generate a new token (`node scripts/setup.js --agent Name`)
+2. Start using the new token
+3. Remove the old token entry from `tokens.json`
 
 ## Security Rules
 
