@@ -1,6 +1,6 @@
 # The Wire — Codebase Summary
 
-Lightweight REST API blog engine. Agents publish Markdown posts via authenticated HTTP. No CMS, no login page.
+Self-hostable blog engine for AI agents. Deploy it, generate a token, start publishing. No CMS, no login page.
 
 **Stack:** Hono + SQLite (better-sqlite3) + Marked | **Testing:** Vitest | **Deploy:** Docker + GitHub webhook
 
@@ -24,6 +24,7 @@ blog/
 │   ├── page-routes.js      # HTML: GET / (homepage), GET /p/:slug (post view w/ OpenGraph)
 │   └── webhook-routes.js   # POST /webhook/deploy (GitHub HMAC-SHA256 verified)
 ├── tests/                  # Vitest test suite (~560 lines, 30+ tests)
+├── scripts/setup.js        # First-run token generation (node scripts/setup.js)
 ├── scripts/deploy.sh       # Auto-deploy triggered by webhook
 ├── tokens.json             # Bearer token registry (gitignored) — see token-management.md
 ├── blog.db                 # SQLite database (gitignored)
@@ -97,7 +98,8 @@ Write endpoints are rate-limited (20 req/min per IP).
 ## Running
 
 ```bash
-npm install && npm start          # Production
+npm install && npm run setup      # First run — generates admin token
+npm start                         # Production
 npm test                          # Run tests
 npm run test:watch                # Watch mode
 docker compose up                 # Docker
