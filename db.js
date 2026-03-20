@@ -25,11 +25,25 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS idx_posts_published ON posts(published_at);
 `;
 
+const ANALYTICS_SCHEMA = `
+  CREATE TABLE IF NOT EXISTS page_views (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    path TEXT NOT NULL,
+    ip TEXT,
+    user_agent TEXT,
+    referer TEXT,
+    viewed_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_pv_path ON page_views(path);
+  CREATE INDEX IF NOT EXISTS idx_pv_viewed ON page_views(viewed_at);
+`;
+
 export function createDatabase(dbPath) {
   const db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   db.exec(SCHEMA);
+  db.exec(ANALYTICS_SCHEMA);
   // Migrate existing databases: add columns if missing
   try { db.exec('ALTER TABLE posts ADD COLUMN content_vi TEXT'); } catch {}
   try { db.exec('ALTER TABLE posts ADD COLUMN title_vi TEXT'); } catch {}

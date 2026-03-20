@@ -2,10 +2,12 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { bodyLimit } from 'hono/body-limit';
 import { port } from './config.js';
+import db from './db.js';
 import webhookRoutes from './routes/webhook-routes.js';
 import apiRoutes from './routes/api-routes.js';
 import pageRoutes from './routes/page-routes.js';
 import feedRoutes from './feed.js';
+import analyticsRoutes from './routes/analytics-routes.js';
 
 export { port };
 
@@ -35,6 +37,23 @@ app.onError((err, c) => {
   return c.json({ error: 'Internal server error' }, 500);
 });
 
+// --- Analytics: log page views ---
+const logView = db.prepare(
+  'INSERT INTO page_views (path, ip, user_agent, referer) VALUES (?, ?, ?, ?)'
+);
+app.use('*', async (c, next) => {
+  await next();
+  const path = new URL(c.req.url).pathname;
+  if (c.res.status === 200 && !path.startsWith('/api/') && !path.startsWith('/webhook/') && path !== '/health') {
+    try {
+      const ip = c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown';
+      const ua = c.req.header('user-agent') || '';
+      const ref = c.req.header('referer') || '';
+      logView.run(path, ip, ua, ref);
+    } catch {}
+  }
+});
+
 // Health check
 app.get('/health', (c) => c.json({ status: 'ok', uptime: process.uptime() }));
 
@@ -42,4 +61,5 @@ app.get('/health', (c) => c.json({ status: 'ok', uptime: process.uptime() }));
 app.route('/', webhookRoutes);
 app.route('/', apiRoutes);
 app.route('/', feedRoutes);
+app.route('/', analyticsRoutes);
 app.route('/', pageRoutes);
