@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decision 586/QĐ-BYT — Vietnamese ↔️ English Translation Review</title>
+<style>
+ :root {
+ --header-bg: #b71c1c;
+ --header-text: #fff;
+ --border: #ccc;
+ --bg-vi: #fffdf5;
+ --bg-en: #f5f9ff;
+ --accent-vi: #c62828;
+ --accent-en: #1565c0;
+ --text: #222;
+ --section-bg: #f0f0f0;
+ }
+
+ * { margin: 0; padding: 0; box-sizing: border-box; }
+
+ body {
+ font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+ color: var(--text);
+ background: #e8e8e8;
+ }
+
+ .top-bar {
+ position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+ background: var(--header-bg);
+ color: var(--header-text);
+ display: flex; align-items: center; justify-content: space-between;
+ padding: 10px 24px;
+ box-shadow: 0 2px 8px rgba(0,0,0,.25);
+ }
+ .top-bar h1 { font-size: 16px; font-weight: 600; letter-spacing: .3px; }
+ .top-bar .meta { font-size: 12px; opacity: .85; }
+ .top-bar .controls { display: flex; gap: 10px; align-items: center; }
+ .top-bar button {
+ background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
+ color: #fff; padding: 5px 14px; border-radius: 4px; cursor: pointer;
+ font-size: 13px; transition: background .2s;
+ }
+ .top-bar button:hover { background: rgba(255,255,255,.28); }
+ .top-bar button.active { background: rgba(255,255,255,.35); font-weight: 600; }
+
+ .col-headers {
+ position: fixed; top: 50px; left: 0; right: 0; z-index: 99;
+ display: flex;
+ box-shadow: 0 1px 4px rgba(0,0,0,.12);
+ }
+ .col-header {
+ flex: 1; padding: 8px 20px;
+ font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;
+ display: flex; align-items: center; gap: 8px;
+ }
+ .col-header.vi { background: #fff3e0; color: var(--accent-vi); border-right: 1px solid var(--border); }
+ .col-header.en { background: #e3f2fd; color: var(--accent-en); }
+ .col-header .flag { font-size: 18px; }
+
+ .container {
+ margin-top: 88px;
+ display: flex;
+ height: calc(100vh - 88px);
+ }
+
+ .panel {
+ flex: 1;
+ overflow-y: auto;
+ padding: 28px 26px 60px;
+ line-height: 1.75;
+ font-size: 14.5px;
+ scroll-behavior: smooth;
+ }
+ .panel.vi { background: var(--bg-vi); border-right: 2px solid var(--border); }
+ .panel.en { background: var(--bg-en); }
+
+ .sync-indicator {
+ position: fixed; bottom: 16px; right: 16px; z-index: 100;
+ background: #333; color: #fff; padding: 6px 14px; border-radius: 20px;
+ font-size: 12px; opacity: .8; pointer-events: none;
+ transition: opacity .3s;
+ }
+ .sync-indicator.hidden { opacity: 0; }
+
+ .doc-header {
+ text-align: center;
+ margin-bottom: 24px;
+ padding-bottom: 20px;
+ border-bottom: 2px solid currentColor;
+ }
+ .vi .doc-header { border-color: var(--accent-vi); }
+ .en .doc-header { border-color: var(--accent-en); }
+
+ .doc-header .ministry {
+ font-weight: 700; font-size: 15px; text-transform: uppercase; letter-spacing: .5px;
+ }
+ .doc-header .republic {
+ font-size: 13px; font-weight: 600; text-transform: uppercase; margin-top: 4px;
+ }
+ .doc-header .motto {
+ font-size: 13px; font-style: italic; margin-top: 2px;
+ }
+ .doc-header .doc-number {
+ margin-top: 12px; font-weight: 600; font-size: 14px;
+ }
+ .doc-header .doc-date {
+ font-size: 13px; font-style: italic; margin-top: 2px;
+ }
+
+ .doc-title {
+ text-align: center;
+ font-size: 17px;
+ font-weight: 700;
+ text-transform: uppercase;
+ margin: 20px 0;
+ padding: 12px 16px;
+ line-height: 1.5;
+ }
+ .vi .doc-title { background: #fff8e1; border-left: 4px solid var(--accent-vi); }
+ .en .doc-title { background: #e8f0fe; border-left: 4px solid var(--accent-en); }
+
+ .doc-subtitle {
+ text-align: center;
+ font-size: 14px;
+ font-weight: 700;
+ text-transform: uppercase;
+ margin: 10px 0 16px;
+ }
+
+ .section-block {
+ min-height: 40px;
+ margin-bottom: 2px;
+ padding: 8px 12px;
+ border-radius: 4px;
+ transition: background .2s;
+ }
+ .section-block:hover { background: rgba(0,0,0,.03); }
+ .section-block.highlight {
+ background: rgba(255,235,59,.15) !important;
+ box-shadow: inset 3px 0 0 #fbc02d;
+ }
+
+ .section-heading {
+ font-weight: 700;
+ font-size: 15px;
+ margin: 18px 0 8px;
+ padding: 6px 10px;
+ border-radius: 4px;
+ }
+ .vi .section-heading { background: #ffecb3; color: #bf360c; }
+ .en .section-heading { background: #bbdefb; color: #0d47a1; }
+
+ .subsection-heading {
+ font-weight: 700;
+ font-size: 14px;
+ margin: 14px 0 6px;
+ padding: 4px 8px;
+ border-radius: 3px;
+ }
+ .vi .subsection-heading { background: #fff3e0; }
+ .en .subsection-heading { background: #e3f2fd; }
+
+ .item-label { font-weight: 600; }
+
+ .article-heading {
+ font-weight: 700;
+ margin: 14px 0 6px;
+ font-size: 14.5px;
+ }
+
+ .signer {
+ text-align: right;
+ margin-top: 24px;
+ font-weight: 700;
+ font-size: 14px;
+ line-height: 1.6;
+ }
+
+ .recipients {
+ margin-top: 20px;
+ padding: 12px 14px;
+ border-radius: 5px;
+ font-size: 13px;
+ line-height: 1.7;
+ }
+ .vi .recipients { background: #fff8e1; border: 1px solid #ffe082; }
+ .en .recipients { background: #e8f0fe; border: 1px solid #90caf9; }
+ .recipients .rec-title { font-weight: 700; margin-bottom: 4px; }
+
+ .plan-header {
+ text-align: center;
+ margin: 30px 0 20px;
+ padding: 16px;
+ border-radius: 6px;
+ font-weight: 700;
+ font-size: 16px;
+ text-transform: uppercase;
+ line-height: 1.5;
+ }
+ .vi .plan-header { background: #fff3e0; border: 2px solid var(--accent-vi); color: var(--accent-vi); }
+ .en .plan-header { background: #e3f2fd; border: 2px solid var(--accent-en); color: var(--accent-en); }
+
+ .plan-issuance {
+ text-align: center;
+ font-size: 13px;
+ font-style: italic;
+ margin-bottom: 20px;
+ }
+
+ .separator {
+ border: none;
+ border-top: 1px dashed #bbb;
+ margin: 24px 0;
+ }
+
+ ul { margin: 4px 0 4px 20px; }
+ li { margin-bottom: 4px; }
+
+ .panel.font-sm { font-size: 13px; }
+ .panel.font-md { font-size: 14.5px; }
+ .panel.font-lg { font-size: 16.5px; }
+
+ @media print {
+ .top-bar, .col-headers, .sync-indicator { display: none; }
+ .container { margin-top: 0; height: auto; display: flex; }
+ .panel { overflow: visible; page-break-inside: avoid; }
+ }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+ <div>
+ <h1>Decision No. 586/QĐ-BYT — Translation Review</h1>
+ <div class="meta">Ministry of Health · March 9, 2026 · Electronic Medical Records Implementation Plan</div>
+ </div>
+ <div class="controls">
+ <button onclick="setFontSize('font-sm')">A-</button>
+ <button onclick="setFontSize('font-md')" class="active" id="btnMd">A</button>
+ <button onclick="setFontSize('font-lg')">A+</button>
+ <button onclick="toggleSync()" id="btnSync" class="active">Sync: ON</button>
+ </div>
+</div>
+
+<div class="col-headers">
+ <div class="col-header vi"><span class="flag">🇻🇳</span> Vietnamese (Original)</div>
+ <div class="col-header en"><span class="flag">🇬🇧</span> English (Translation)</div>
+</div>
+
+<div class="container">
+
+<!-- ===== VIETNAMESE PANEL ===== -->
+<div class="panel vi" id="panelVi">
+
+ <div class="doc-header" data-section="header">
+ <div class="ministry">BỘ Y TẾ</div>
+ <div>--------</div>
+ <br>
+ <div class="republic">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+ <div class="motto">Độc lập - Tự do - Hạnh phúc</div>
+ <div>---------------</div>
+ <div class="doc-number">Số: 586/QĐ-BYT</div>
+ <div class="doc-date">Hà Nội, ngày 09 tháng 3 năm 2026</div>
+ </div>
+
+ <div class="doc-title" data-section="title">
+ QUYẾT ĐỊNH<br>
+ PHÊ DUYỆT KẾ HOẠCH TRIỂN KHAI HỒ SƠ BỆNH ÁN ĐIỆN TỬ TẠI CÁC CƠ SỞ KHÁM BỆNH, CHỮA BỆNH TRÊN TOÀN QUỐC NĂM 2026
+ </div>
+
+ <div class="doc-subtitle" data-section="minister">BỘ TRƯỞNG BỘ Y TẾ</div>
+
+ <div class="section-block" data-section="legal-basis">
+ <p>Căn cứ Nghị quyết số 72-NQ/TW ngày 09 tháng 9 năm 2025 của Bộ Chính trị về một số giải pháp đột phá, tăng cường bảo vệ, chăm sóc và nâng cao sức khỏe Nhân dân;</p>
+ <p>Căn cứ Nghị định số 42/2025/NĐ-CP ngày 27 tháng 02 năm 2025 của Chính phủ quy định chức năng, nhiệm vụ, quyền hạn và cơ cấu tổ chức của Bộ Y tế;</p>
+ <p>Căn cứ Nghị quyết số 282/NQ-CP ngày 15 tháng 9 năm 2025 của Chính phủ ban hành Chương trình hành động của Chính phủ thực hiện Nghị quyết số 72-NQ/TW ngày 09 tháng 9 năm 2025 của Bộ Chính trị về một số giải pháp đột phá, tăng cường bảo vệ, chăm sóc và nâng cao sức khỏe nhân dân;</p>
+ <p>Căn cứ Thông tư số 13/2025/TT-BYT ngày 06 tháng 6 năm 2025 của Bộ Y tế hướng dẫn triển khai hồ sơ bệnh án điện tử;</p>
+ <p>Theo đề nghị của Cục trưởng Cục Khoa học công nghệ và Đào tạo.</p>
+ </div>
+
+ <div class="section-heading" data-section="decides">QUYẾT ĐỊNH:</div>
+
+ <div class="section-block" data-section="article1">
+ <p class="article-heading">Điều 1.</p>
+ <p>Phê duyệt kèm theo Quyết định này Kế hoạch triển khai hồ sơ bệnh án điện tử tại các cơ sở khám bệnh, chữa bệnh trên toàn quốc năm 2026.</p>
+ </div>
+
+ <div class="section-block" data-section="article2">
+ <p class="article-heading">Điều 2.</p>
+ <p>Quyết định này có hiệu lực kể từ ngày ký ban hành.</p>
+ </div>
+
+ <div class="section-block" data-section="article3">
+ <p class="article-heading">Điều 3.</p>
+ <p>Các Ông/Bà: Chánh Văn phòng Bộ; Cục trưởng Cục Khoa học công nghệ và Đào tạo; Cục trưởng Cục quản lý Khám, chữa bệnh; Cục trưởng Cục Quản lý Y, Dược cổ truyền; Vụ trưởng Vụ Kế hoạch - Tài chính; Giám đốc Trung tâm Thông tin y tế Quốc gia; Thủ trưởng các đơn vị thuộc và trực thuộc Bộ Y tế, các đơn vị có liên quan chịu trách nhiệm thi hành Quyết định này./.</p>
+ </div>
+
+ <div class="recipients" data-section="recipients">
+ <div class="rec-title">Nơi nhận:</div>
+ - TTg và các Phó TTgCP (để b/c);<br>
+ - Bộ trưởng (để b/c);<br>
+ - Các Bộ: VPCP, CA, TC, KH&amp;CN (để p/h);<br>
+ - UBND tỉnh, thành phố trực thuộc Trung ương;<br>
+ - Các đ/c Thứ trưởng Bộ Y tế (để p/h);<br>
+ - Các đơn vị thuộc Bộ Y tế (để t/h);<br>
+ - Các Bệnh viện, Viện có giường trực thuộc Bộ Y tế (để t/h);<br>
+ - Các SYT tỉnh, thành phố trực thuộc Trung ương (để t/h);<br>
+ - Y tế các Bộ, Ngành (để t/h);<br>
+ - Các BV trực thuộc trường Đại học Y, Dược (để t/h);<br>
+ - Hiệp hội Bệnh viện tư nhân Việt Nam (để p/h);<br>
+ - Cổng Thông tin điện tử Bộ Y tế;<br>
+ - Lưu: VT, K2ĐT.
+ </div>
+
+ <div class="signer" data-section="signer">
+ KT. BỘ TRƯỞNG<br>THỨ TRƯỞNG<br><br>Nguyễn Tri Thức
+ </div>
+
+ <hr class="separator">
+
+ <div class="plan-header" data-section="plan-title">
+ KẾ HOẠCH<br>
+ TRIỂN KHAI HỒ SƠ BỆNH ÁN ĐIỆN TỬ TẠI CÁC CƠ SỞ KHÁM BỆNH, CHỮA BỆNH TRÊN TOÀN QUỐC NĂM 2026
+ </div>
+ <div class="plan-issuance" data-section="plan-issuance">
+ (Ban hành kèm theo Quyết định số 586/QĐ-BYT ngày 09/3/2026 của Bộ trưởng Bộ Y tế)
+ </div>
+
+ <div class="section-heading" data-section="s1">I. MỤC ĐÍCH, YÊU CẦU</div>
+
+ <div class="subsection-heading" data-section="s1-1">1. Mục đích</div>
+ <div class="section-block" data-section="s1-1-content">
+ <p>- Bảo đảm 100% các cơ sở khám bệnh, chữa bệnh trên toàn quốc hoàn thành triển khai hồ sơ bệnh án điện tử vào 31/12/2026. Trong đó, tất cả các bệnh viện (bao gồm bệnh viện công lập, bệnh viện tư nhân) không sử dụng hồ sơ bệnh án giấy từ ngày 01/01/2027.</p>
+ <p>- Bảo đảm việc triển khai hồ sơ bệnh án điện tử tại các cơ sở khám bệnh, chữa bệnh để kết nối đồng bộ, quản lý dữ liệu sức khỏe người dân theo vòng đời tại tất cả các cơ sở khám bệnh, chữa bệnh trên toàn quốc.</p>
+ </div>
+
+ <div class="subsection-heading" data-section="s1-2">2. Yêu cầu</div>
+ <div class="section-block" data-section="s1-2-content">
+ <p>- Triển khai hồ sơ bệnh án điện tử là nhiệm vụ trọng tâm, quan trọng và cốt lõi tại cơ sở khám bệnh, chữa bệnh, Thủ trưởng các cơ quan, đơn vị chịu trách nhiệm trực tiếp công tác này và ưu tiên các nguồn lực, quyết liệt triển khai để bảo đảm hoàn thành có chất lượng đối với hồ sơ bệnh án điện tử tại đơn vị theo chỉ đạo của Bộ Chính trị, Chính phủ, Bộ Y tế tại Nghị quyết số 72-NQ/TW, Đề án 06/CP và Thông tư số 13/2025/TT-BYT.</p>
+ <p>- Triển khai hồ sơ bệnh án điện tử bảo đảm thực chất, đem lại hiệu quả cụ thể, nâng cao năng suất, chất lượng công tác khám, chữa bệnh, mang lợi ích thiết thực cho người bệnh, người dân, cơ sở y tế.</p>
+ <p>- Bảo đảm an toàn thông tin, an ninh mạng và bảo mật thông tin theo quy định của pháp luật khi triển khai.</p>
+ </div>
+
+ <div class="section-heading" data-section="s2">II. NHIỆM VỤ VÀ GIẢI PHÁP</div>
+
+ <div class="subsection-heading" data-section="s2-1">1. Hoàn thiện thể chế, chính sách</div>
+
+ <div class="section-block" data-section="s2-1-1">
+ <p class="item-label">1.1. Thông tư thay thế Thông tư số 54/2017/TT-BYT ngày 29/12/2017 của Bộ Y tế về Bộ tiêu chí ứng dụng công nghệ thông tin tại các cơ sở khám bệnh, chữa bệnh</p>
+ <p>- Đơn vị chủ trì: Cục Khoa học công nghệ và Đào tạo.</p>
+ <p>- Đơn vị phối hợp: Vụ Pháp chế, Cục Quản lý Khám, chữa bệnh, Cục Quản lý Y, Dược cổ truyền, Trung tâm Thông tin y tế Quốc gia và các cơ quan, đơn vị liên quan.</p>
+ <p>- Kết quả: Thông tư thay thế Thông tư số 54/2017/TT-BYT của Bộ Y tế.</p>
+ <p>- Thời gian hoàn thành: Quý II/2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-1-2">
+ <p class="item-label">1.2. Chỉ thị của Bộ trưởng Bộ Y tế về triển khai hồ sơ bệnh án điện tử</p>
+ <p>- Đơn vị chủ trì: Cục Khoa học công nghệ và Đào tạo.</p>
+ <p>- Đơn vị phối hợp: Vụ Pháp chế, Cục Quản lý Khám, chữa bệnh, Cục Quản lý Y, Dược cổ truyền, Trung tâm Thông tin y tế Quốc gia và các cơ quan, đơn vị liên quan.</p>
+ <p>- Kết quả: Chỉ thị của Bộ trưởng Bộ Y tế về triển khai hồ sơ bệnh án điện tử.</p>
+ <p>- Thời gian hoàn thành: Quý I/2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-1-3">
+ <p class="item-label">1.3. Hướng dẫn về triển khai giá dịch vụ sử dụng hệ thống RIS-PACS không in phim</p>
+ <p>- Đơn vị chủ trì: Vụ Bảo hiểm y tế.</p>
+ <p>- Đơn vị phối hợp: Bộ Y tế (Vụ Kế hoạch – Tài chính, Cục Khoa học công nghệ và Đào tạo, Cục Quản lý Khám, chữa bệnh, Cục Quản lý Y, Dược cổ truyền, Trung tâm Thông tin y tế Quốc gia); Bộ Tài chính; Sở Y tế tỉnh, thành phố trực thuộc trung ương; Y tế các Bộ, ngành và các cơ quan, đơn vị liên quan.</p>
+ <p>- Kết quả:</p>
+ <p>+ Các Quyết định về giá dịch vụ sử dụng hệ thống RIS-PACS không in phim đối với các bệnh viện/viện có giường bệnh của Bộ Y tế.</p>
+ <p>+ Văn bản hướng dẫn các địa phương/đơn vị về giá dịch vụ sử dụng hệ thống RIS-PACS không in phim của các cơ sở khám bệnh, chữa bệnh.</p>
+ <p>- Thời gian hoàn thành: Quý II/2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-1-4">
+ <p class="item-label">1.4. Hướng dẫn, triển khai quy định về giá dịch vụ khám bệnh, chữa bệnh có kết cấu chi phí quản lý</p>
+ <p>- Đơn vị chủ trì: Vụ Kế hoạch – Tài chính.</p>
+ <p>- Đơn vị phối hợp: Bộ Y tế (Vụ Bảo hiểm y tế, Cục Khoa học công nghệ và Đào tạo, Cục Quản lý Khám, chữa bệnh, Cục Quản lý Y, Dược cổ truyền, Trung tâm Thông tin y tế Quốc gia); Bộ Tài chính; Sở Y tế tỉnh, thành phố trực thuộc trung ương; Y tế các Bộ, ngành và các cơ quan, đơn vị liên quan.</p>
+ <p>- Kết quả: Các hướng dẫn, quy định về triển khai quy định về giá dịch vụ khám bệnh, chữa bệnh có kết cấu chi phí quản lý (bao gồm chi phí công nghệ thông tin).</p>
+ <p>- Thời gian hoàn thành: Quý II/2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-1-5">
+ <p class="item-label">1.5. Tiếp tục cập nhật, bổ sung các bộ danh mục thuật ngữ lâm sàng, bộ danh mục chỉ số cận lâm sàng</p>
+ <p>- Đơn vị chủ trì: Cục Quản lý Khám, chữa bệnh.</p>
+ <p>- Đơn vị phối hợp: Cục Quản lý Y, Dược cổ truyền, Cục Khoa học công nghệ và Đào tạo, Vụ Bảo hiểm y tế, Trung tâm Thông tin y tế Quốc gia và các cơ quan, đơn vị liên quan.</p>
+ <p>- Kết quả: Các Quyết định của Bộ trưởng Bộ Y tế ban hành bộ danh mục về thuật ngữ lâm sàng, cận lâm sàng để áp dụng trong hồ sơ bệnh án điện tử.</p>
+ <p>- Thời gian hoàn thành: Quý II/2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-1-6">
+ <p class="item-label">1.6. Tiếp tục cập nhật, bổ sung các bộ danh mục về chuyên môn, thuật ngữ lâm sàng lĩnh vực y, dược cổ truyền</p>
+ <p>- Đơn vị chủ trì: Cục Quản lý Y, dược cổ truyền.</p>
+ <p>- Đơn vị phối hợp: Cục Quản lý Khám, chữa bệnh, Cục Khoa học công nghệ và Đào tạo, Vụ Bảo hiểm y tế, Trung tâm Thông tin y tế Quốc gia và các cơ quan, đơn vị liên quan.</p>
+ <p>- Kết quả: Các Quyết định của Bộ trưởng Bộ Y tế ban hành bộ danh mục về chuyên môn, thuật ngữ lâm sàng lĩnh vực y, dược cổ truyền để ứng dụng trong hồ sơ bệnh án điện tử.</p>
+ <p>- Thời gian hoàn thành: Quý II/2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-1-7">
+ <p class="item-label">1.7. Cập nhật, bổ sung các hướng dẫn tuân thủ pháp luật về giao dịch điện tử, dữ liệu, bảo đảm an toàn thông tin và các quy định có liên quan trong triển khai hồ sơ bệnh án điện tử</p>
+ <p>- Đơn vị chủ trì: Cục Khoa học công nghệ và Đào tạo.</p>
+ <p>- Đơn vị phối hợp: Vụ Pháp chế, Cục Quản lý Khám, chữa bệnh, Trung tâm Thông tin y tế Quốc gia và các cơ quan, đơn vị liên quan.</p>
+ <p>- Kết quả: Các văn bản của Bộ Y tế về cập nhật, hướng dẫn tuân thủ pháp luật về giao dịch điện tử, dữ liệu, bảo đảm an toàn thông tin,… trong triển khai hồ sơ bệnh án điện tử.</p>
+ <p>- Thời gian hoàn thành: Quý II/2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-1-8">
+ <p class="item-label">1.8. Tiếp tục cập nhật, bổ sung hướng dẫn kỹ thuật triển khai hồ sơ bệnh án điện tử</p>
+ <p>- Đơn vị chủ trì: Trung tâm Thông tin y tế Quốc gia.</p>
+ <p>- Đơn vị phối hợp: Vụ Pháp chế, Cục Khoa học công nghệ và Đào tạo, Cục Quản lý Khám, chữa bệnh và các cơ quan, đơn vị liên quan.</p>
+ <p>- Kết quả: Rà soát, cập nhật các nội dung có quy định liên quan để sửa đổi, bổ sung nội dung tại Công văn số 365/TTYQG-GPQLCL ngày 06/06/2025 của Trung tâm Thông tin y tế Quốc gia, có văn bản hướng dẫn kỹ thuật triển khai hồ sơ bệnh án điện tử cập nhật được ban hành (nếu có).</p>
+ <p>- Thời gian hoàn thành: Quý II/2026.</p>
+ </div>
+
+ <div class="subsection-heading" data-section="s2-2">2. Duy trì, cập nhật và triển khai hồ sơ bệnh án điện tử</div>
+
+ <div class="section-block" data-section="s2-2-1">
+ <p class="item-label">2.1. Cập nhật, duy trì việc triển khai hồ sơ bệnh án điện tử tại các Bệnh viện, viện có giường trực thuộc Bộ Y tế và các bệnh viện/viện có giường bệnh trực thuộc các Bộ, Ngành</p>
+ <p>- Đơn vị chủ trì: Các Bệnh viện, viện có giường trực thuộc Bộ Y tế và các bệnh viện trực thuộc các Bộ, Ngành.</p>
+ <p>- Đơn vị phối hợp: Bộ Y tế (Cục Khoa học công nghệ và Đào tạo, Cục Quản lý Khám, chữa bệnh, Cục Quản lý Y, dược cổ truyền, Trung tâm Thông tin y tế Quốc gia); Bộ Công an; Bộ Tài chính và các cơ quan, đơn vị liên quan.</p>
+ <p>- Kết quả:</p>
+ <p>+ Căn cứ nội dung được phê duyệt tại Kế hoạch này, căn cứ điều kiện thực tiễn tại đơn vị thực hiện rà soát, cập nhật và bổ sung hạ tầng, các ứng dụng công nghệ thông tin, danh mục dùng chung, an toàn thông tin,… để duy trì, cập nhật, nâng cấp (nếu có) về ứng dụng công nghệ thông tin, chuyển đổi số tại đơn vị;</p>
+ <p>+ Cập nhật, duy trì, nâng cấp (nếu có) về hồ sơ bệnh án điện tử tại đơn vị. Bảo đảm đến hết 31/12/2026 không sử dụng bệnh án giấy.</p>
+ <p>- Thời gian hoàn thành: Nhiệm vụ thường xuyên năm 2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-2-2">
+ <p class="item-label">2.2. Kiến nghị về cập nhật, bổ sung kế hoạch triển khai hồ sơ bệnh án điện tử của các Bộ, Ngành; các địa phương</p>
+ <p>- Đơn vị chủ trì: Các Sở Y tế tỉnh, thành phố trực thuộc trung ương; Y tế các Bộ, ngành.</p>
+ <p>- Đơn vị phối hợp: Bộ Y tế (Cục Khoa học công nghệ và Đào tạo, Cục Quản lý Khám, chữa bệnh, Cục Quản lý Y, dược cổ truyền, Trung tâm Thông tin y tế Quốc gia); các Bộ, Ngành có liên quan; các Sở, Ban, Ngành và cơ quan, đơn vị có liên quan tại địa phương.</p>
+ <p>- Kết quả:</p>
+ <p>+ Rà soát, cập nhật và bổ sung Kế hoạch triển khai hồ sơ bệnh án điện tử tại địa phương hoặc tại các đơn vị thuộc thẩm quyền quản lý; Bảo đảm hoàn thành triển khai hồ sơ bệnh án điện tử tại tất cả các cơ sở khám bệnh, chữa bệnh trên toàn quốc chậm nhất trong 31/12/2026.</p>
+ <p>+ Sở Y tế các tỉnh, thành phố trực thuộc Trung ương; Y tế các Bộ, Ngành có trách nhiệm tham mưu, báo cáo Ủy ban nhân dân tỉnh, thành phố trực thuộc trung ương hoặc Bộ, Ngành chủ quản của đơn vị để ưu tiên bố trí nguồn lực, đảm bảo hoàn thành việc triển khai hồ sơ bệnh án điện tử tại các cơ sở khám bệnh chữa bệnh thuộc thẩm quyền quản lý.</p>
+ <p>- Thời gian hoàn thành: Tháng 3/2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-2-3">
+ <p class="item-label">2.3. Triển khai hồ sơ bệnh án điện tử tại tất cả các cơ sở khám bệnh, chữa bệnh trên toàn quốc năm 2026</p>
+ <p>- Đơn vị thực hiện: Các cơ sở khám bệnh, chữa bệnh trên toàn quốc.</p>
+ <p>- Đơn vị phối hợp: Bộ Y tế (Cục Khoa học công nghệ và Đào tạo; Cục Quản lý Khám, chữa bệnh; Trung tâm Thông tin y tế Quốc gia); Sở Y tế các tỉnh, thành phố trực thuộc trung ương; Y tế các bộ, ngành và các cơ quan, đơn vị liên quan.</p>
+ <p>- Kết quả:</p>
+ <p>+ Các cơ sở khám bệnh, chữa bệnh đã triển khai và chưa triển khai hồ sơ bệnh án điện tử căn cứ Kế hoạch triển khai hồ sơ bệnh án điện tử do cơ quan quản lý y tế trực tiếp phê duyệt năm 2026 (nếu có), căn cứ điều kiện thực tiễn tại đơn vị thực hiện rà soát, đánh giá hiện trạng, xây dựng (hoặc cập nhật) kế hoạch triển khai cụ thể, bổ sung các nguồn lực để bảo đảm việc hoàn thành triển khai hồ sơ bệnh án điện tử tại đơn vị chậm nhất vào ngày 31/12/2026.</p>
+ <p>+ Triển khai hồ sơ bệnh án điện tử đầy đủ tại tất cả các cơ sở khám bệnh, chữa bệnh trên toàn quốc;</p>
+ <p>+ Yêu cầu các bệnh viện (bao gồm bệnh viện công lập, bệnh viện tư nhân) trên toàn quốc triển khai không sử dụng hồ sơ bệnh án giấy từ ngày 01/01/2027.</p>
+ <p>- Thời gian hoàn thành: 31/12/2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-2-4">
+ <p class="item-label">2.4. Duy trì kết nối, chia sẻ và liên thông dữ liệu khám, chữa bệnh bảo hiểm y tế, giấy chuyển tuyến khám bệnh, chữa bệnh dựa trên dữ liệu hồ sơ bệnh án điện tử</p>
+ <p>- Đơn vị chủ trì: Các cơ sở khám bệnh, chữa bệnh.</p>
+ <p>- Đơn vị phối hợp: Bộ Công an, Bộ Y tế (Vụ Bảo hiểm y tế, Cục Khoa học công nghệ và Đào tạo; Cục Quản lý Khám, chữa bệnh; Trung tâm Thông tin y tế Quốc gia), Bộ Tài chính (BHXHVN); Sở Y tế các tỉnh, thành phố trực thuộc trung ương; Y tế các Bộ, Ngành và các cơ quan, đơn vị liên quan.</p>
+ <p>- Kết quả: Duy trì kết nối, chia sẻ và liên thông dữ liệu khám, chữa bệnh bảo hiểm y tế, giấy chuyển tuyến khám bệnh, chữa bệnh trên dữ liệu hồ sơ bệnh án điện tử, cập nhật với sổ sức khỏe điện tử triển khai tại tất cả các cơ sở khám bệnh, chữa bệnh trên toàn quốc.</p>
+ <p>- Thời gian hoàn thành: Nhiệm vụ thường xuyên năm 2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-2-5">
+ <p class="item-label">2.5. Triển khai kết nối, chia sẻ và liên thông và tái sử dụng dữ liệu cận lâm sàng, lâm sàng dựa trên dữ liệu hồ sơ bệnh án điện tử</p>
+ <p>- Đơn vị chủ trì: Các cơ sở khám bệnh, chữa bệnh.</p>
+ <p>- Đơn vị phối hợp: Bộ Y tế (Vụ Bảo hiểm y tế, Cục Khoa học công nghệ và Đào tạo; Cục Quản lý Khám, chữa bệnh; Trung tâm Thông tin y tế Quốc gia), Bộ Tài chính (BHXHVN); Sở Y tế các tỉnh, thành phố trực thuộc trung ương; Y tế các Bộ, Ngành và các cơ quan, đơn vị liên quan.</p>
+ <p>- Kết quả: Triển khai kết nối, chia sẻ và liên thông và tái sử dụng dữ liệu cận lâm sàng, lâm sàng dựa trên dữ liệu hồ sơ bệnh án điện tử, sổ sức khỏe điện tử tại các cơ sở khám bệnh, chữa bệnh đáp ứng điều kiện thực hiện.</p>
+ <p>- Thời gian hoàn thành: Nhiệm vụ thường xuyên năm 2026.</p>
+ </div>
+
+ <div class="subsection-heading" data-section="s2-3">3. Kiểm tra, đánh giá việc triển khai hồ sơ bệnh án điện tử năm 2026</div>
+ <div class="section-block" data-section="s2-3-content">
+ <p>- Đơn vị chủ trì: Bộ Y tế (Cục Khoa học công nghệ và Đào tạo); cơ quan quản lý về y tế của Y tế các Bộ, Ngành; tại địa phương (Sở Y tế các tỉnh, thành phố trực thuộc trung ương).</p>
+ <p>- Đơn vị phối hợp: Bộ Y tế (Cục Quản lý Khám, chữa bệnh, Cục Quản lý Y, dược cổ truyền, Vụ Bảo hiểm y tế, Trung tâm Thông tin y tế Quốc gia và các cơ quan, đơn vị liên quan); Bộ Công an; Bộ Tài chính (BHXHVN); Cơ quan, đơn vị có liên quan.</p>
+ <p>- Kết quả: Tổ chức các đoàn kiểm tra, đánh giá về việc triển khai hồ sơ bệnh án điện tử tại các cơ sở khám bệnh, chữa bệnh thuộc thẩm quyền quản lý.</p>
+ <p>- Thời gian hoàn thành: Nhiệm vụ thường xuyên năm 2026.</p>
+ </div>
+
+ <div class="section-heading" data-section="s3">III. NGUỒN KINH PHÍ TRIỂN KHAI</div>
+ <div class="section-block" data-section="s3-content">
+ <p>1. Nguồn kinh phí triển khai Kế hoạch này và các hoạt động có liên quan tại Kế hoạch của các cơ quan, đơn vị được bảo đảm từ nguồn ngân sách nhà nước hằng năm và các nguồn kinh phí hợp pháp khác của cơ quan, đơn vị năm 2026.</p>
+ <p>2. Ưu tiên, khuyến khích sử dụng các nguồn kinh phí theo hình thức công tư, xã hội hóa.</p>
+ </div>
+
+ <div class="section-heading" data-section="s4">IV. TỔ CHỨC THỰC HIỆN</div>
+ <div class="section-block" data-section="s4-content">
+ <p>1. Cục Khoa học công nghệ và Đào tạo chủ trì hướng dẫn triển khai, đôn đốc, kiểm tra việc thực hiện Kế hoạch này; tổng hợp kết quả triển khai Kế hoạch định kỳ hằng tháng, 06 tháng và báo cáo Lãnh đạo Bộ Y tế.</p>
+ <p>2. Các đơn vị thuộc Bộ Y tế, Trung tâm Thông tin y tế Quốc gia, các bệnh viện, viện có giường bệnh trực thuộc Bộ Y tế; Các bệnh viện trực thuộc các đơn vị trực thuộc Bộ Y tế chủ động triển khai các nhiệm vụ được giao tại Kế hoạch này; báo cáo kết quả thực hiện về Bộ Y tế (qua Cục Khoa học công nghệ và Đào tạo) trước ngày 25 hằng tháng hoặc đột xuất khi có yêu cầu.</p>
+ <p>3. Sở Y tế các tỉnh, thành phố trực thuộc Trung ương; Y tế các Bộ, ngành:</p>
+ <p>a) Tham mưu cho Ủy ban nhân dân các tỉnh, thành phố trực thuộc Trung ương, các Bộ, ngành để rà soát, cập nhật, bổ sung Kế hoạch triển khai hồ sơ bệnh án điện tử tại địa phương và tổ chức thực hiện;</p>
+ <p>b) Chỉ đạo, hướng dẫn, đôn đốc và kiểm tra việc triển khai hồ sơ bệnh án điện tử tại các cơ sở khám bệnh, chữa bệnh thuộc thẩm quyền quản lý, bảo đảm hoàn thành triển khai hồ sơ bệnh án điện tử chậm nhất trong tháng 12/2026.</p>
+ <p>4. Kiến nghị các Bộ, ngành; Uỷ ban nhân dân các tỉnh, thành phố trực thuộc Trung ương chỉ đạo các Sở Y tế, các cơ sở khám bệnh, chữa bệnh thuộc thẩm quyền quản lý rà soát, xây dựng kế hoạch bổ sung và triển khai hồ sơ bệnh án điện tử theo Kế hoạch này.</p>
+ <p>Trong quá trình thực hiện Kế hoạch này, nếu có khó khăn, vướng mắc, đề nghị các cơ quan, đơn vị thông tin về Bộ Y tế (qua Cục Khoa học công nghệ và Đào tạo) để xem xét, quyết định./.</p>
+ </div>
+
+</div><!-- end panelVi -->
+
+<!-- ===== ENGLISH PANEL ===== -->
+<div class="panel en" id="panelEn">
+
+ <div class="doc-header" data-section="header">
+ <div class="ministry">MINISTRY OF HEALTH</div>
+ <div>--------</div>
+ <br>
+ <div class="republic">SOCIALIST REPUBLIC OF VIETNAM</div>
+ <div class="motto">Independence - Freedom - Happiness</div>
+ <div>---------------</div>
+ <div class="doc-number">No.: 586/QĐ-BYT</div>
+ <div class="doc-date">Hanoi, March 9, 2026</div>
+ </div>
+
+ <div class="doc-title" data-section="title">
+ DECISION<br>
+ APPROVING THE PLAN FOR IMPLEMENTATION OF ELECTRONIC MEDICAL RECORDS AT MEDICAL EXAMINATION AND TREATMENT FACILITIES NATIONWIDE IN 2026
+ </div>
+
+ <div class="doc-subtitle" data-section="minister">THE MINISTER OF HEALTH</div>
+
+ <div class="section-block" data-section="legal-basis">
+ <p>Pursuant to Resolution No. 72-NQ/TW dated September 9, 2025 of the Politburo on a number of breakthrough solutions to strengthen the protection, care and improvement of the people's health;</p>
+ <p>Pursuant to Decree No. 42/2025/NĐ-CP dated February 27, 2025 of the Government stipulating the functions, tasks, powers and organizational structure of the Ministry of Health;</p>
+ <p>Pursuant to Resolution No. 282/NQ-CP dated September 15, 2025 of the Government promulgating the Government's Action Program to implement Resolution No. 72-NQ/TW dated September 9, 2025 of the Politburo on a number of breakthrough solutions to strengthen the protection, care and improvement of the people's health;</p>
+ <p>Pursuant to Circular No. 13/2025/TT-BYT dated June 6, 2025 of the Ministry of Health guiding the implementation of electronic medical records;</p>
+ <p>At the proposal of the Director General of the Department of Science, Technology and Training.</p>
+ </div>
+
+ <div class="section-heading" data-section="decides">DECIDES:</div>
+
+ <div class="section-block" data-section="article1">
+ <p class="article-heading">Article 1.</p>
+ <p>To approve, together with this Decision, the Plan for implementation of electronic medical records at medical examination and treatment facilities nationwide in 2026.</p>
+ </div>
+
+ <div class="section-block" data-section="article2">
+ <p class="article-heading">Article 2.</p>
+ <p>This Decision takes effect from the date of signing.</p>
+ </div>
+
+ <div class="section-block" data-section="article3">
+ <p class="article-heading">Article 3.</p>
+ <p>The Chief of the Office of the Ministry; Director General of the Department of Science, Technology and Training; Director General of the Department of Medical Service Administration; Director General of the Department of Traditional Medicine Administration; Director General of the Department of Planning – Finance; Director of the National Health Information Center; Heads of units under and affiliated to the Ministry of Health and relevant units shall be responsible for the implementation of this Decision./.</p>
+ </div>
+
+ <div class="recipients" data-section="recipients">
+ <div class="rec-title">Recipients:</div>
+ - Prime Minister and Deputy Prime Ministers (for reporting);<br>
+ - Minister (for reporting);<br>
+ - Ministries: Government Office, Public Security, Finance, Science &amp; Technology (for coordination);<br>
+ - People's Committees of provinces and centrally-run cities;<br>
+ - Deputy Ministers of Health (for coordination);<br>
+ - Units under the Ministry of Health (for implementation);<br>
+ - Hospitals and institutes with inpatient beds under the Ministry of Health (for implementation);<br>
+ - Departments of Health of provinces and centrally-run cities (for implementation);<br>
+ - Health units of Ministries and sectors (for implementation);<br>
+ - Hospitals under Medical and Pharmaceutical Universities (for implementation);<br>
+ - Vietnam Private Hospital Association (for coordination);<br>
+ - E-portal of the Ministry of Health;<br>
+ - Archives: Administrative Office, Dept. of Science, Technology and Training.
+ </div>
+
+ <div class="signer" data-section="signer">
+ ON BEHALF OF THE MINISTER<br>DEPUTY MINISTER<br><br>Nguyen Tri Thuc
+ </div>
+
+ <hr class="separator">
+
+ <div class="plan-header" data-section="plan-title">
+ PLAN<br>
+ FOR IMPLEMENTATION OF ELECTRONIC MEDICAL RECORDS AT MEDICAL EXAMINATION AND TREATMENT FACILITIES NATIONWIDE IN 2026
+ </div>
+ <div class="plan-issuance" data-section="plan-issuance">
+ (Issued together with Decision No. 586/QĐ-BYT dated March 9, 2026 of the Minister of Health)
+ </div>
+
+ <div class="section-heading" data-section="s1">I. PURPOSES AND REQUIREMENTS</div>
+
+ <div class="subsection-heading" data-section="s1-1">1. Purposes</div>
+ <div class="section-block" data-section="s1-1-content">
+ <p>- To ensure that 100% of medical examination and treatment facilities nationwide complete the implementation of electronic medical records by December 31, 2026. In which, all hospitals (including public hospitals and private hospitals) shall not use paper medical records from January 1, 2027.</p>
+ <p>- To ensure the implementation of electronic medical records at medical examination and treatment facilities in order to synchronously connect and manage people's health data throughout the lifecycle at all medical examination and treatment facilities nationwide.</p>
+ </div>
+
+ <div class="subsection-heading" data-section="s1-2">2. Requirements</div>
+ <div class="section-block" data-section="s1-2-content">
+ <p>- The implementation of electronic medical records is a key, important and core task at medical examination and treatment facilities; heads of agencies and units are directly responsible for this work and shall prioritize resources and drastically implement it to ensure quality completion of electronic medical records at their units in accordance with the direction of the Politburo, the Government and the Ministry of Health in Resolution No. 72-NQ/TW, Project 06/CP and Circular No. 13/2025/TT-BYT.</p>
+ <p>- The implementation of electronic medical records must ensure substance, bring about specific effectiveness, improve productivity and quality of medical examination and treatment, and bring practical benefits to patients, people and healthcare facilities.</p>
+ <p>- To ensure information safety, cybersecurity and data confidentiality in accordance with the provisions of law during implementation.</p>
+ </div>
+
+ <div class="section-heading" data-section="s2">II. TASKS AND SOLUTIONS</div>
+
+ <div class="subsection-heading" data-section="s2-1">1. Completing institutions and policies</div>
+
+ <div class="section-block" data-section="s2-1-1">
+ <p class="item-label">1.1. Circular replacing Circular No. 54/2017/TT-BYT dated December 29, 2017 of the Ministry of Health on criteria for application of information technology at medical examination and treatment facilities</p>
+ <p>- Lead unit: Department of Science, Technology and Training.</p>
+ <p>- Coordinating units: Legal Department, Department of Medical Service Administration, Department of Traditional Medicine Administration, National Health Information Center and relevant agencies and units.</p>
+ <p>- Result: Circular replacing Circular No. 54/2017/TT-BYT of the Ministry of Health.</p>
+ <p>- Completion time: Quarter II/2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-1-2">
+ <p class="item-label">1.2. Directive of the Minister of Health on implementation of electronic medical records</p>
+ <p>- Lead unit: Department of Science, Technology and Training.</p>
+ <p>- Coordinating units: Legal Department, Department of Medical Service Administration, Department of Traditional Medicine Administration, National Health Information Center and relevant agencies and units.</p>
+ <p>- Result: Directive of the Minister of Health on implementation of electronic medical records.</p>
+ <p>- Completion time: Quarter I/2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-1-3">
+ <p class="item-label">1.3. Guidance on implementation of service pricing for use of RIS-PACS system without film printing</p>
+ <p>- Lead unit: Health Insurance Department.</p>
+ <p>- Coordinating units: Ministry of Health (Planning – Finance Department, Department of Science, Technology and Training, Department of Medical Service Administration, Department of Traditional Medicine Administration, National Health Information Center); Ministry of Finance; Departments of Health of provinces and centrally-run cities; health units of Ministries and sectors and relevant agencies and units.</p>
+ <p>- Results:</p>
+ <p>+ Decisions on service pricing for use of RIS-PACS system without film printing for hospitals/institutes with inpatient beds under the Ministry of Health.</p>
+ <p>+ Guidance documents for localities/units on service pricing for use of RIS-PACS system without film printing at medical examination and treatment facilities.</p>
+ <p>- Completion time: Quarter II/2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-1-4">
+ <p class="item-label">1.4. Guidance and implementation of regulations on pricing of medical examination and treatment services including management cost structure</p>
+ <p>- Lead unit: Planning – Finance Department.</p>
+ <p>- Coordinating units: Ministry of Health (Health Insurance Department, Department of Science, Technology and Training, Department of Medical Service Administration, Department of Traditional Medicine Administration, National Health Information Center); Ministry of Finance; Departments of Health of provinces and centrally-run cities; health units of Ministries and sectors and relevant agencies and units.</p>
+ <p>- Result: Guidance and regulations on implementation of pricing of medical examination and treatment services including management costs (including information technology costs).</p>
+ <p>- Completion time: Quarter II/2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-1-5">
+ <p class="item-label">1.5. Continued updating and supplementation of clinical terminology sets and paraclinical index lists</p>
+ <p>- Lead unit: Department of Medical Service Administration.</p>
+ <p>- Coordinating units: Department of Traditional Medicine Administration, Department of Science, Technology and Training, Health Insurance Department, National Health Information Center and relevant agencies and units.</p>
+ <p>- Result: Decisions of the Minister of Health promulgating lists of clinical and paraclinical terminology for application in electronic medical records.</p>
+ <p>- Completion time: Quarter II/2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-1-6">
+ <p class="item-label">1.6. Continued updating and supplementation of professional lists and clinical terminology in the field of traditional medicine and pharmacy</p>
+ <p>- Lead unit: Department of Traditional Medicine Administration.</p>
+ <p>- Coordinating units: Department of Medical Service Administration, Department of Science, Technology and Training, Health Insurance Department, National Health Information Center and relevant agencies and units.</p>
+ <p>- Result: Decisions of the Minister of Health promulgating professional and clinical terminology lists in the field of traditional medicine and pharmacy for application in electronic medical records.</p>
+ <p>- Completion time: Quarter II/2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-1-7">
+ <p class="item-label">1.7. Updating and supplementing guidance on compliance with laws on electronic transactions, data, information security assurance and relevant regulations in the implementation of electronic medical records</p>
+ <p>- Lead unit: Department of Science, Technology and Training.</p>
+ <p>- Coordinating units: Legal Department, Department of Medical Service Administration, National Health Information Center and relevant agencies and units.</p>
+ <p>- Result: Documents of the Ministry of Health on updating and guiding compliance with laws on electronic transactions, data, information security assurance, etc. in the implementation of electronic medical records.</p>
+ <p>- Completion time: Quarter II/2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-1-8">
+ <p class="item-label">1.8. Continuing to update and supplement technical guidance for the implementation of electronic medical records</p>
+ <p>- Lead unit: National Health Information Center.</p>
+ <p>- Coordinating units: Legal Department, Department of Science, Technology and Training, Department of Medical Service Administration and relevant agencies and units.</p>
+ <p>- Result: Review and update contents with relevant regulations to amend and supplement the contents of Official Dispatch No. 365/TTYQG-GPQLCL dated June 6, 2025 of the National Health Information Center; updated technical guidance documents for the implementation of electronic medical records shall be issued (if any).</p>
+ <p>- Completion time: Quarter II/2026.</p>
+ </div>
+
+ <div class="subsection-heading" data-section="s2-2">2. Maintaining, updating and implementing electronic medical records</div>
+
+ <div class="section-block" data-section="s2-2-1">
+ <p class="item-label">2.1. Updating and maintaining the implementation of electronic medical records at hospitals and institutes with inpatient beds under the Ministry of Health and hospitals/institutes with inpatient beds under Ministries and sectors</p>
+ <p>- Lead units: Hospitals and institutes with inpatient beds under the Ministry of Health and hospitals under Ministries and sectors.</p>
+ <p>- Coordinating units: Ministry of Health (Department of Science, Technology and Training, Department of Medical Service Administration, Department of Traditional Medicine Administration, National Health Information Center); Ministry of Public Security; Ministry of Finance and relevant agencies and units.</p>
+ <p>- Results:</p>
+ <p>+ Based on the contents approved in this Plan and actual conditions at the unit, conduct review, update and supplement infrastructure, information technology applications, shared data lists, information security, etc. to maintain, update and upgrade (if any) information technology applications and digital transformation at the unit;</p>
+ <p>+ Update, maintain and upgrade (if any) electronic medical records at the unit. Ensure that paper medical records are no longer used by December 31, 2026.</p>
+ <p>- Completion time: Regular task in 2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-2-2">
+ <p class="item-label">2.2. Recommendations on updating and supplementing plans for implementation of electronic medical records of Ministries, sectors and localities</p>
+ <p>- Lead units: Departments of Health of provinces and centrally-run cities; health units of Ministries and sectors.</p>
+ <p>- Coordinating units: Ministry of Health (Department of Science, Technology and Training, Department of Medical Service Administration, Department of Traditional Medicine Administration, National Health Information Center); relevant Ministries and sectors; local departments, agencies and units.</p>
+ <p>- Results:</p>
+ <p>+ Review, update and supplement the Plan for implementation of electronic medical records at localities or units under management authority; ensure completion of implementation of electronic medical records at all medical examination and treatment facilities nationwide no later than December 31, 2026.</p>
+ <p>+ Departments of Health of provinces and centrally-run cities; health units of Ministries and sectors are responsible for advising and reporting to the People's Committees of provinces and centrally-run cities or the managing Ministries/sectors to prioritize resource allocation to ensure completion of electronic medical records implementation at healthcare facilities under their management authority.</p>
+ <p>- Completion time: March 2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-2-3">
+ <p class="item-label">2.3. Implementing electronic medical records at all medical examination and treatment facilities nationwide in 2026</p>
+ <p>- Implementing units: All medical examination and treatment facilities nationwide.</p>
+ <p>- Coordinating units: Ministry of Health (Department of Science, Technology and Training; Department of Medical Service Administration; National Health Information Center); Departments of Health of provinces and centrally-run cities; health units of Ministries and sectors and relevant agencies and units.</p>
+ <p>- Results:</p>
+ <p>+ Healthcare facilities that have implemented and have not yet implemented electronic medical records shall, based on the electronic medical records implementation plan approved by the competent health management authority in 2026 (if any) and actual conditions at the unit, conduct review, assessment of current status, develop (or update) detailed implementation plans, and supplement resources to ensure completion of electronic medical records implementation at the unit no later than December 31, 2026.</p>
+ <p>+ Fully implement electronic medical records at all medical examination and treatment facilities nationwide;</p>
+ <p>+ Require all hospitals (including public and private hospitals) nationwide to cease using paper medical records from January 1, 2027.</p>
+ <p>- Completion time: December 31, 2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-2-4">
+ <p class="item-label">2.4. Maintaining connection, sharing and interoperability of health insurance medical examination and treatment data and referral documents based on electronic medical record data</p>
+ <p>- Lead units: Medical examination and treatment facilities.</p>
+ <p>- Coordinating units: Ministry of Public Security, Ministry of Health (Health Insurance Department, Department of Science, Technology and Training; Department of Medical Service Administration; National Health Information Center), Ministry of Finance (Vietnam Social Security); Departments of Health of provinces and centrally-run cities; health units of Ministries and sectors and relevant agencies and units.</p>
+ <p>- Result: Maintain connection, sharing and interoperability of health insurance medical examination and treatment data and referral documents based on electronic medical record data, integrated with electronic health records implemented at all medical examination and treatment facilities nationwide.</p>
+ <p>- Completion time: Regular task in 2026.</p>
+ </div>
+
+ <div class="section-block" data-section="s2-2-5">
+ <p class="item-label">2.5. Implementing connection, sharing, interoperability and reuse of paraclinical and clinical data based on electronic medical record data</p>
+ <p>- Lead units: Medical examination and treatment facilities.</p>
+ <p>- Coordinating units: Ministry of Health (Health Insurance Department, Department of Science, Technology and Training; Department of Medical Service Administration; National Health Information Center), Ministry of Finance (Vietnam Social Security); Departments of Health of provinces and centrally-run cities; health units of Ministries and sectors and relevant agencies and units.</p>
+ <p>- Result: Implement connection, sharing, interoperability and reuse of paraclinical and clinical data based on electronic medical records and electronic health records at healthcare facilities meeting the conditions for implementation.</p>
+ <p>- Completion time: Regular task in 2026.</p>
+ </div>
+
+ <!-- 3. Inspection -->
+ <div class="subsection-heading" data-section="s2-3">3. Inspection and evaluation of electronic medical records implementation in 2026</div>
+ <div class="section-block" data-section="s2-3-content">
+ <p>- Lead units: Ministry of Health (Department of Science, Technology and Training); health management agencies of Ministries and sectors; at the local level (Departments of Health of provinces and centrally-run cities).</p>
+ <p>- Coordinating units: Ministry of Health (Department of Medical Service Administration, Department of Traditional Medicine Administration, Health Insurance Department, National Health Information Center and relevant agencies and units); Ministry of Public Security; Ministry of Finance (Vietnam Social Security); relevant agencies and units.</p>
+ <p>- Result: Organize inspection and evaluation missions on the implementation of electronic medical records at healthcare facilities under management authority.</p>
+ <p>- Completion time: Regular task in 2026.</p>
+ </div>
+
+ <!-- III. FUNDING -->
+ <div class="section-heading" data-section="s3">III. FUNDING SOURCES FOR IMPLEMENTATION</div>
+ <div class="section-block" data-section="s3-content">
+ <p>1. Funding sources for implementation of this Plan and related activities of agencies and units shall be ensured from the annual state budget and other lawful funding sources of agencies and units in 2026.</p>
+ <p>2. Priority is given to and encouragement is provided for the use of funding sources under public-private partnership and socialization forms.</p>
+ </div>
+
+ <!-- IV. ORGANIZATION -->
+ <div class="section-heading" data-section="s4">IV. ORGANIZATION OF IMPLEMENTATION</div>
+ <div class="section-block" data-section="s4-content">
+ <p>1. The Department of Science, Technology and Training shall take the lead in guiding implementation, urging and inspecting the execution of this Plan; synthesizing implementation results on a monthly and biannual basis and reporting to the leadership of the Ministry of Health.</p>
+ <p>2. Units under the Ministry of Health, the National Health Information Center, hospitals and institutes with inpatient beds under the Ministry of Health; hospitals under units affiliated to the Ministry of Health shall proactively implement assigned tasks under this Plan; report implementation results to the Ministry of Health (through the Department of Science, Technology and Training) before the 25th of each month or on an ad hoc basis upon request.</p>
+ <p>3. Departments of Health of provinces and centrally-run cities; health units of Ministries and sectors:</p>
+ <p>a) Advise the People's Committees of provinces and centrally-run cities, Ministries and sectors to review, update and supplement plans for implementation of electronic medical records at localities and organize implementation;</p>
+ <p>b) Direct, guide, urge and inspect the implementation of electronic medical records at healthcare facilities under their management authority, ensuring completion of electronic medical records implementation no later than December 2026.</p>
+ <p>4. It is proposed that Ministries, sectors and People's Committees of provinces and centrally-run cities direct Departments of Health and healthcare facilities under their management authority to review, develop supplementary plans and implement electronic medical records in accordance with this Plan.</p>
+ <p>During the implementation of this Plan, if there are any difficulties or obstacles, agencies and units are requested to report to the Ministry of Health (through the Department of Science, Technology and Training) for consideration and decision./.</p>
+ </div>
+
+</div><!-- end panelEn -->
+
+</div><!-- end container -->
+
+<!-- ── Sync indicator ── -->
+<div class="sync-indicator hidden" id="syncIndicator">Syncing…</div>
+
+<script>
+(function() {
+ const panelVi = document.getElementById('panelVi');
+ const panelEn = document.getElementById('panelEn');
+ const syncIndicator = document.getElementById('syncIndicator');
+ let syncEnabled = true;
+ let isSyncing = false;
+ let syncTimeout;
+
+ function syncScroll(source, target) {
+ if (!syncEnabled || isSyncing) return;
+ isSyncing = true;
+
+ const sourceMax = source.scrollHeight - source.clientHeight;
+ const targetMax = target.scrollHeight - target.clientHeight;
+ if (sourceMax > 0) {
+ const ratio = source.scrollTop / sourceMax;
+ target.scrollTop = ratio * targetMax;
+ }
+
+ // Show indicator briefly
+ syncIndicator.classList.remove('hidden');
+ clearTimeout(syncTimeout);
+ syncTimeout = setTimeout(() => {
+ syncIndicator.classList.add('hidden');
+ }, 600);
+
+ requestAnimationFrame(() => { isSyncing = false; });
+ }
+
+ panelVi.addEventListener('scroll', () => syncScroll(panelVi, panelEn));
+ panelEn.addEventListener('scroll', () => syncScroll(panelEn, panelVi));
+
+ // Highlight matching sections on hover
+ document.querySelectorAll('[data-section]').forEach(el => {
+ el.addEventListener('mouseenter', () => {
+ const section = el.dataset.section;
+ document.querySelectorAll(`[data-section="${section}"]`).forEach(m => m.classList.add('highlight'));
+ });
+ el.addEventListener('mouseleave', () => {
+ document.querySelectorAll('.highlight').forEach(m => m.classList.remove('highlight'));
+ });
+ });
+
+ // Font size control
+ window.setFontSize = function(cls) {
+ ['font-sm','font-md','font-lg'].forEach(c => {
+ panelVi.classList.remove(c);
+ panelEn.classList.remove(c);
+ });
+ panelVi.classList.add(cls);
+ panelEn.classList.add(cls);
+ document.querySelectorAll('.top-bar button').forEach(b => b.classList.remove('active'));
+ if (cls === 'font-sm') document.querySelectorAll('.top-bar button')[0].classList.add('active');
+ if (cls === 'font-md') document.querySelectorAll('.top-bar button')[1].classList.add('active');
+ if (cls === 'font-lg') document.querySelectorAll('.top-bar button')[2].classList.add('active');
+ };
+
+ // Sync toggle
+ window.toggleSync = function() {
+ syncEnabled = !syncEnabled;
+ const btn = document.getElementById('btnSync');
+ btn.textContent = syncEnabled ? 'Sync: ON' : 'Sync: OFF';
+ btn.classList.toggle('active', syncEnabled);
+ };
+})();
+</script>
+
+</body>
+</html>

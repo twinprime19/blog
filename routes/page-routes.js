@@ -1,8 +1,13 @@
 import { Hono } from 'hono';
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import db from '../db.js';
 import { esc, markedInstance } from '../helpers.js';
 import { validateSlug } from '../validation.js';
 import { siteUrl, siteDescription } from '../config.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const pages = new Hono();
 
@@ -160,6 +165,18 @@ pages.get('/p/:slug', (c) => {
     <meta property="og:url" content="${esc(siteUrl)}/p/${esc(post.slug)}">
     ${post.cover_image ? `<meta property="og:image" content="${esc(post.cover_image)}">` : ''}`;
   return c.html(layout(post.title, body, ogMeta));
+});
+
+// Serve static HTML files from public/
+pages.get('/:filename{.+\\.html$}', (c) => {
+  const filename = c.req.param('filename');
+  if (filename.includes('/') || filename.includes('..')) return c.text('Not found', 404);
+  try {
+    const content = readFileSync(join(__dirname, '..', 'public', filename), 'utf8');
+    return c.html(content);
+  } catch {
+    return c.text('Not found', 404);
+  }
 });
 
 export default pages;
