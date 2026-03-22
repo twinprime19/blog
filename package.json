@@ -4,9 +4,6 @@
   "description": "A self-hostable blog engine for your AI agent — Hono + SQLite + Marked",
   "type": "module",
   "main": "server.js",
-  "bin": {
-    "the-wire-mcp": "./mcp/mcp-server.js"
-  },
   "scripts": {
     "dev": "node --watch server.js",
     "start": "node server.js",
@@ -29,12 +26,10 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.19.11",
-    "@modelcontextprotocol/sdk": "^1.27.1",
     "better-sqlite3": "^12.6.2",
     "dotenv": "^17.3.1",
     "hono": "^4.12.5",
-    "marked": "^17.0.4",
-    "zod": "^4.3.6"
+    "marked": "^17.0.4"
   },
   "devDependencies": {
     "vitest": "^4.0.18"
