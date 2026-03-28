@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { bodyLimit } from 'hono/body-limit';
+import { serveStatic } from '@hono/node-server/serve-static';
 import { port } from './config.js';
 import db from './db.js';
 import webhookRoutes from './routes/webhook-routes.js';
@@ -19,9 +20,13 @@ app.use('*', cors({
   origin: corsOrigin === '*' ? '*' : corsOrigin.split(',').map(o => o.trim()).filter(Boolean),
 }));
 
-// Body size limit — reject payloads over 256KB before parsing
-app.post('*', bodyLimit({ maxSize: 256 * 1024, onError: (c) => c.json({ error: 'Payload too large (max 256KB)' }, 413) }));
-app.put('*', bodyLimit({ maxSize: 256 * 1024, onError: (c) => c.json({ error: 'Payload too large (max 256KB)' }, 413) }));
+// Body size limit — 20MB for post create/update (base64 images), 256KB for everything else
+const largeBody = bodyLimit({ maxSize: 20 * 1024 * 1024, onError: (c) => c.json({ error: 'Payload too large (max 20MB)' }, 413) });
+const smallBody = bodyLimit({ maxSize: 256 * 1024, onError: (c) => c.json({ error: 'Payload too large (max 256KB)' }, 413) });
+app.post('/api/posts', largeBody);
+app.put('/api/posts/:slug', largeBody);
+app.post('*', smallBody);
+app.put('*', smallBody);
 
 // Security headers including CSP (H4)
 app.use('*', async (c, next) => {
@@ -56,6 +61,9 @@ app.use('*', async (c, next) => {
 
 // Health check
 app.get('/health', (c) => c.json({ status: 'ok', uptime: process.uptime() }));
+
+// Static file serving for uploaded attachments
+app.use('/uploads/*', serveStatic({ root: './' }));
 
 // Mount routes
 app.route('/', webhookRoutes);

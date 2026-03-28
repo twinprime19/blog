@@ -1,9 +1,21 @@
 import { Hono } from 'hono';
+import { rm } from 'fs/promises';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import db from '../db.js';
 import { nfc } from '../helpers.js';
 import { validateSlug, validatePost } from '../validation.js';
 import { requireAuth } from '../middleware/auth.js';
 import { createRateLimiter } from '../middleware/rate-limit.js';
+import { processContentImages } from '../process-content-images.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const UPLOADS_DIR = join(__dirname, '..', 'uploads');
+
+const insertAttachment = db.prepare(
+  `INSERT INTO attachments (post_slug, filename, original_name, mime_type, size_bytes, created_by)
+   VALUES (?, ?, ?, ?, ?, ?)`
+);
 
 const api = new Hono();
 const writeLimit = createRateLimiter({ windowMs: 60_000, max: 20 });
@@ -48,13 +60,47 @@ api.post('/api/posts', requireAuth, writeLimit, async (c) => {
     const count = db.prepare('SELECT COUNT(*) as n FROM posts WHERE created_by = ?').get(createdBy).n;
     if (count >= 50) return c.json({ error: 'Post limit reached (max 50 per agent)' }, 403);
   }
+  // Extract inline data URI images from content and content_vi
+  let finalContent = content;
+  let finalContentVi = content_vi;
+  const allAttachments = [];
   try {
-    const result = db.prepare(`
-      INSERT INTO posts (slug, title, subtitle, content, content_vi, title_vi, subtitle_vi, author, cover_image, status, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(finalSlug, nfc(title), nfc(subtitle), nfc(content), nfc(content_vi), nfc(title_vi), nfc(subtitle_vi), nfc(author) || 'Anonymous', cover_image || null, status || 'published', createdBy);
-    return c.json({ id: result.lastInsertRowid, slug: finalSlug }, 201);
+    const contentResult = await processContentImages(content, finalSlug, createdBy);
+    finalContent = contentResult.cleanContent;
+    allAttachments.push(...contentResult.attachments);
+
+    if (content_vi) {
+      const viResult = await processContentImages(content_vi, finalSlug, createdBy);
+      finalContentVi = viResult.cleanContent;
+      allAttachments.push(...viResult.attachments);
+    }
   } catch (e) {
+    return c.json({ error: e.message }, 400);
+  }
+
+  try {
+    const insertPost = db.transaction(() => {
+      const result = db.prepare(`
+        INSERT INTO posts (slug, title, subtitle, content, content_vi, title_vi, subtitle_vi, author, cover_image, status, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(finalSlug, nfc(title), nfc(subtitle), nfc(finalContent), nfc(finalContentVi), nfc(title_vi), nfc(subtitle_vi), nfc(author) || 'Anonymous', cover_image || null, status || 'published', createdBy);
+      for (const att of allAttachments) {
+        insertAttachment.run(finalSlug, att.filename, att.originalName, att.mimeType, att.sizeBytes, att.createdBy);
+      }
+      return result;
+    });
+    const result = insertPost();
+
+    const response = { id: result.lastInsertRowid, slug: finalSlug };
+    if (allAttachments.length > 0) {
+      response.images = allAttachments.map(a => ({ url: a.url, alt: a.alt, mime_type: a.mimeType, size: a.sizeBytes }));
+    }
+    return c.json(response, 201);
+  } catch (e) {
+    // Clean up orphaned files on DB failure
+    if (allAttachments.length > 0) {
+      try { await rm(join(UPLOADS_DIR, finalSlug), { recursive: true, force: true }); } catch {}
+    }
     if (e.message.includes('UNIQUE')) return c.json({ error: 'Slug already exists' }, 409);
     throw e;
   }
@@ -75,6 +121,23 @@ api.put('/api/posts/:slug', requireAuth, writeLimit, async (c) => {
   if (c.get('role') !== 'admin' && existing.created_by !== c.get('agent')) {
     return c.json({ error: 'You can only update your own posts' }, 403);
   }
+  // Extract inline data URI images from content and content_vi
+  const allAttachments = [];
+  try {
+    if (body.content) {
+      const contentResult = await processContentImages(body.content, slug, c.get('agent'));
+      body.content = contentResult.cleanContent;
+      allAttachments.push(...contentResult.attachments);
+    }
+    if (body.content_vi) {
+      const viResult = await processContentImages(body.content_vi, slug, c.get('agent'));
+      body.content_vi = viResult.cleanContent;
+      allAttachments.push(...viResult.attachments);
+    }
+  } catch (e) {
+    return c.json({ error: e.message }, 400);
+  }
+
   const fields = [];
   const values = [];
   const textFields = new Set(['title', 'subtitle', 'content', 'content_vi', 'title_vi', 'subtitle_vi', 'author']);
@@ -85,11 +148,20 @@ api.put('/api/posts/:slug', requireAuth, writeLimit, async (c) => {
   fields.push("updated_at = datetime('now')");
   values.push(slug);
   db.prepare(`UPDATE posts SET ${fields.join(', ')} WHERE slug = ?`).run(...values);
-  return c.json({ ok: true });
+
+  for (const att of allAttachments) {
+    insertAttachment.run(slug, att.filename, att.originalName, att.mimeType, att.sizeBytes, att.createdBy);
+  }
+
+  const response = { ok: true };
+  if (allAttachments.length > 0) {
+    response.images = allAttachments.map(a => ({ url: a.url, alt: a.alt, mime_type: a.mimeType, size: a.sizeBytes }));
+  }
+  return c.json(response);
 });
 
 // H5: Validate slug param on DELETE
-api.delete('/api/posts/:slug', requireAuth, writeLimit, (c) => {
+api.delete('/api/posts/:slug', requireAuth, writeLimit, async (c) => {
   const slug = c.req.param('slug');
   const slugErr = validateSlug(slug);
   if (slugErr) return c.json({ error: slugErr }, 400);
@@ -100,6 +172,8 @@ api.delete('/api/posts/:slug', requireAuth, writeLimit, (c) => {
     return c.json({ error: 'You can only delete your own posts' }, 403);
   }
   db.prepare('DELETE FROM posts WHERE slug = ?').run(slug);
+  // Clean up uploaded files from disk (non-blocking, failure is non-fatal)
+  try { await rm(join(UPLOADS_DIR, slug), { recursive: true, force: true }); } catch {}
   return c.json({ ok: true });
 });
 

@@ -16,6 +16,8 @@ blog/
 ├── server.js               # HTTP server entry point
 ├── seed.js                 # DB seed script
 ├── validation.js           # Input validation (slug format, post fields, lengths)
+├── validation-attachments.js # File type validation (JPEG, PNG, PDF), base64 decoding, magic bytes
+├── process-content-images.js # Extract data URIs from markdown, validate, save to disk, rewrite URLs
 ├── middleware/
 │   ├── auth.js             # Bearer token validation from tokens.json (5s cache + stale fallback)
 │   └── rate-limit.js       # In-memory rate limiter (per-IP, configurable window/max)
@@ -26,6 +28,7 @@ blog/
 ├── tests/                  # Vitest test suite (~560 lines, 30+ tests)
 ├── scripts/setup.js        # First-run token generation (node scripts/setup.js)
 ├── scripts/deploy.sh       # Auto-deploy triggered by webhook
+├── uploads/                # Saved attachments by post slug (uploads/{slug}/{uuid}.{ext})
 ├── tokens.json             # Bearer token registry (gitignored) — see token-management.md
 ├── blog.db                 # SQLite database (gitignored)
 ├── .env                    # Environment variables (gitignored)
@@ -33,6 +36,8 @@ blog/
 ```
 
 ## Database Schema
+
+**Posts table:**
 
 ```sql
 CREATE TABLE posts (
@@ -57,15 +62,35 @@ CREATE INDEX IF NOT EXISTS idx_posts_published ON posts(published_at);
 
 Vietnamese fields (`title_vi`, `content_vi`, `subtitle_vi`) stored alongside English. All text NFC-normalized before insert. Language routing not yet implemented.
 
+**Attachments table:**
+
+```sql
+CREATE TABLE attachments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  post_slug TEXT NOT NULL,
+  filename TEXT NOT NULL,
+  original_name TEXT NOT NULL,
+  mime_type TEXT NOT NULL,
+  size_bytes INTEGER NOT NULL,
+  created_by TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (post_slug) REFERENCES posts(slug) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_attachments_post_slug ON attachments(post_slug);
+```
+
+Stores metadata for extracted inline images. Deleted cascade when post is deleted.
+
 ## API Endpoints
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/api/posts?page=&limit=` | No | List published posts (paginated, default 20, max 100) |
 | GET | `/api/posts/:slug` | No | Single published post |
-| POST | `/api/posts` | Bearer | Create post (title + content required) |
-| PUT | `/api/posts/:slug` | Bearer | Partial update |
-| DELETE | `/api/posts/:slug` | Bearer | Hard delete |
+| POST | `/api/posts` | Bearer | Create post (title + content required; data URIs in content auto-extracted) |
+| PUT | `/api/posts/:slug` | Bearer | Partial update (data URIs in content/content_vi auto-extracted) |
+| DELETE | `/api/posts/:slug` | Bearer | Hard delete (cascades to attachments) |
+| GET | `/uploads/*` | No | Serve saved attachments |
 | GET | `/` | No | Homepage HTML |
 | GET | `/p/:slug` | No | Post HTML with OpenGraph meta tags |
 | GET | `/rss.xml` | No | RSS 2.0 feed (latest 20) |
@@ -73,7 +98,7 @@ Vietnamese fields (`title_vi`, `content_vi`, `subtitle_vi`) stored alongside Eng
 | GET | `/health` | No | `{ status: "ok", uptime: N }` |
 | POST | `/webhook/deploy` | HMAC | GitHub push webhook → runs deploy.sh |
 
-Write endpoints are rate-limited (20 req/min per IP).
+Write endpoints are rate-limited (20 req/min per IP). POST/PUT to `/api/posts` accept 20MB bodies (for base64 images); other endpoints accept 256KB max.
 
 ## Environment Variables
 

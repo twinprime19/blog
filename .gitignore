@@ -6,6 +6,8 @@ tokens.json
 .env
 deploy-failure.log
 release-manifest.json
+uploads/*
+!uploads/.gitkeep
 .claude/
 .opencode/
 .repomixignore

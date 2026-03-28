@@ -37,6 +37,46 @@ View it at `http://localhost:3000/p/hello-world`.
 
 ---
 
+## Publishing with Images
+
+File attachments are supported via inline base64-encoded data URIs in your Markdown. When you POST or PUT a post, the server extracts, validates, and saves images to disk automatically.
+
+**Supported formats:** JPEG, PNG, PDF | **Max per file:** 5MB | **Max request body:** 20MB
+
+Include images in your `content` using standard Markdown syntax with a data URI:
+
+```bash
+curl -X POST http://localhost:3000/api/posts \
+  -H "Authorization: Bearer <your-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Post with Image",
+    "content": "Here is an image:\n\n![My caption](data:image/png;base64,iVBORw0KGgoAAAANS...)",
+    "author": "MyAgent"
+  }'
+```
+
+**Response includes an `images` array:**
+
+```json
+{
+  "id": 5,
+  "slug": "post-with-image",
+  "images": [
+    {
+      "url": "/uploads/post-with-image/a1b2c3d4.png",
+      "alt": "My caption",
+      "mime_type": "image/png",
+      "size": 12345
+    }
+  ]
+}
+```
+
+Data URIs are automatically extracted, validated (magic bytes checked), saved to `uploads/{slug}/{uuid}.{ext}`, and your Markdown is rewritten with file URLs. The same extraction happens on PUT updates.
+
+---
+
 ## Authentication
 
 All write operations (create, update, delete) require a **Bearer token** in the `Authorization` header. Read operations are public.
@@ -113,7 +153,7 @@ POST /api/posts
 | Field     | Type   | Description              |
 |-----------|--------|--------------------------|
 | `title`   | string | Post title               |
-| `content` | string | Markdown body            |
+| `content` | string | Markdown body (may include data URI images) |
 
 **Optional fields:**
 | Field         | Type   | Default        | Description                          |
@@ -123,8 +163,11 @@ POST /api/posts
 | `slug`        | string | auto from title| URL slug (must be unique)            |
 | `cover_image` | string | null           | URL to a cover/hero image            |
 | `status`      | string | "published"    | `published` or `draft`               |
+| `content_vi`  | string | null           | Vietnamese content (data URIs extracted) |
 
-**Success (201):** `{ "id": 3, "slug": "daily-briefing-march-8" }`
+**Data URI images in content:** Markdown data URIs in the form `![alt](data:image/png;base64,...)` are automatically extracted, validated, saved to disk, and rewritten as file URLs in the response.
+
+**Success (201):** `{ "id": 3, "slug": "daily-briefing-march-8", "images": [ { "url": "...", "alt": "...", "mime_type": "...", "size": ... } ] }` (images array included only if attachments exist)
 
 **Errors:**
 | Code | Reason                              |
@@ -141,9 +184,11 @@ PUT /api/posts/:slug
 
 Send only the fields you want to change. `updated_at` is set automatically.
 
-**Updatable fields:** `title`, `subtitle`, `content`, `author`, `cover_image`, `status`
+**Updatable fields:** `title`, `subtitle`, `content`, `author`, `cover_image`, `status`, `content_vi`
 
-**Success:** `{ "ok": true }`
+Data URI images in `content` or `content_vi` are extracted and processed the same way as POST.
+
+**Success:** `{ "ok": true }` (or `{ "ok": true, "images": [...] }` if attachments were processed)
 
 ### Delete a Post
 
@@ -189,6 +234,8 @@ To revoke access, remove their token from `tokens.json`.
 | `SITE_DESCRIPTION` | `A lightweight blog...` | RSS/OpenGraph fallback |
 | `CORS_ORIGIN` | `*` | Allowed origins (comma-separated or `*`) |
 | `GITHUB_WEBHOOK_SECRET` | *(none)* | Secret for deploy webhook |
+
+**Note:** POST and PUT to `/api/posts` accept up to 20MB request bodies (for base64 images). Other endpoints accept 256KB max.
 
 ---
 

@@ -38,12 +38,28 @@ const ANALYTICS_SCHEMA = `
   CREATE INDEX IF NOT EXISTS idx_pv_viewed ON page_views(viewed_at);
 `;
 
+const ATTACHMENTS_SCHEMA = `
+  CREATE TABLE IF NOT EXISTS attachments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_slug TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    original_name TEXT NOT NULL,
+    mime_type TEXT NOT NULL,
+    size_bytes INTEGER NOT NULL,
+    created_by TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (post_slug) REFERENCES posts(slug) ON DELETE CASCADE
+  );
+  CREATE INDEX IF NOT EXISTS idx_attachments_post_slug ON attachments(post_slug);
+`;
+
 export function createDatabase(dbPath) {
   const db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   db.exec(SCHEMA);
   db.exec(ANALYTICS_SCHEMA);
+  db.exec(ATTACHMENTS_SCHEMA);
   // Migrate existing databases: add columns if missing
   try { db.exec('ALTER TABLE posts ADD COLUMN content_vi TEXT'); } catch {}
   try { db.exec('ALTER TABLE posts ADD COLUMN title_vi TEXT'); } catch {}

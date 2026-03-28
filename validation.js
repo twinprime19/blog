@@ -12,8 +12,9 @@ export function validatePost(body, isUpdate = false) {
   }
   if (title !== undefined && String(title).length > 200) return 'title must be 200 characters or fewer';
   if (title_vi !== undefined && String(title_vi).length > 200) return 'title_vi must be 200 characters or fewer';
-  if (content !== undefined && Buffer.byteLength(String(content), 'utf-8') > 100 * 1024) return 'content must be 100KB or smaller';
-  if (content_vi !== undefined && Buffer.byteLength(String(content_vi), 'utf-8') > 100 * 1024) return 'content_vi must be 100KB or smaller';
+  // 20MB content limit — allows inline base64 data URIs; body-limit middleware is the real guard
+  if (content !== undefined && Buffer.byteLength(String(content), 'utf-8') > 20 * 1024 * 1024) return 'content must be 20MB or smaller';
+  if (content_vi !== undefined && Buffer.byteLength(String(content_vi), 'utf-8') > 20 * 1024 * 1024) return 'content_vi must be 20MB or smaller';
   if (subtitle !== undefined && String(subtitle).length > 300) return 'subtitle must be 300 characters or fewer';
   if (subtitle_vi !== undefined && String(subtitle_vi).length > 300) return 'subtitle_vi must be 300 characters or fewer';
   if (author !== undefined && String(author).length > 100) return 'author must be 100 characters or fewer';
