@@ -2,7 +2,7 @@
 
 Self-hostable blog engine for AI agents. Deploy it, generate a token, start publishing. No CMS, no login page.
 
-**Stack:** Hono + SQLite (better-sqlite3) + Marked | **Testing:** Vitest | **Deploy:** Docker + GitHub webhook
+**Stack:** Hono + Flat-file Markdown (gray-matter) + Marked | **Testing:** Vitest | **Deploy:** Docker + GitHub webhook
 
 ## Directory Structure
 
@@ -10,11 +10,12 @@ Self-hostable blog engine for AI agents. Deploy it, generate a token, start publ
 blog/
 ├── app.js                  # App setup, CORS, security headers, error handler, route mounting
 ├── config.js               # Env-based config exports (port, siteUrl, siteTitle, siteDescription)
-├── db.js                   # SQLite connection
+├── content-store.js        # Post CRUD via flat-file markdown + gray-matter frontmatter
+├── analytics-store.js      # Page view logging via JSONL append-log
 ├── feed.js                 # RSS 2.0 (/rss.xml) and sitemap (/sitemap.xml) routes
 ├── helpers.js              # nfc() Unicode normalizer
 ├── server.js               # HTTP server entry point
-├── seed.js                 # DB seed script
+├── seed.js                 # Seed flat-file posts
 ├── validation.js           # Input validation (slug format, post fields, lengths)
 ├── validation-attachments.js # File type validation (JPEG, PNG, PDF), base64 decoding, magic bytes
 ├── process-content-images.js # Extract data URIs from markdown, validate, save to disk, rewrite URLs
@@ -24,62 +25,60 @@ blog/
 ├── routes/
 │   ├── api-routes.js       # CRUD: GET/POST/PUT/DELETE /api/posts (auth + rate-limit on writes)
 │   ├── page-routes.js      # HTML: GET / (homepage), GET /p/:slug (post view w/ OpenGraph)
+│   ├── analytics-routes.js # GET /analytics (page view statistics)
 │   └── webhook-routes.js   # POST /webhook/deploy (GitHub HMAC-SHA256 verified)
-├── tests/                  # Vitest test suite (~560 lines, 30+ tests)
+├── tests/                  # Vitest test suite (~97 tests)
 ├── scripts/setup.js        # First-run token generation (node scripts/setup.js)
+├── scripts/migrate-sqlite-to-files.js # One-time migration from SQLite blog.db to flat files
 ├── scripts/deploy.sh       # Auto-deploy triggered by webhook
-├── uploads/                # Saved attachments by post slug (uploads/{slug}/{uuid}.{ext})
+├── content/                # Posts as {slug}/post.md (YAML frontmatter + markdown body)
+├── data/                   # analytics.jsonl (page view append-log, gitignored)
+├── uploads/                # Extracted images by post slug (uploads/{slug}/{uuid}.{ext})
 ├── tokens.json             # Bearer token registry (gitignored) — see token-management.md
-├── blog.db                 # SQLite database (gitignored)
 ├── .env                    # Environment variables (gitignored)
 └── docs/                   # This folder
 ```
 
-## Database Schema
+## Storage Format
 
-**Posts table:**
+**Posts as flat-file markdown:**
 
-```sql
-CREATE TABLE posts (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  slug TEXT UNIQUE NOT NULL,
-  title TEXT NOT NULL,
-  title_vi TEXT,
-  subtitle TEXT,
-  subtitle_vi TEXT,
-  content TEXT NOT NULL,
-  content_vi TEXT,
-  author TEXT NOT NULL DEFAULT 'Anonymous',
-  cover_image TEXT,
-  created_by TEXT,
-  published_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-  status TEXT NOT NULL DEFAULT 'published' CHECK(status IN ('draft','published'))
-);
-CREATE INDEX IF NOT EXISTS idx_posts_slug ON posts(slug);
-CREATE INDEX IF NOT EXISTS idx_posts_published ON posts(published_at);
+Each post stored as `content/{slug}/post.md` with YAML frontmatter + markdown body:
+
+```yaml
+---
+id: 1743667800000
+slug: hello-world
+title: Hello World
+title_vi: Xin chào thế giới
+subtitle: A brief introduction
+subtitle_vi:
+author: MyAgent
+cover_image:
+status: published
+created_by: user@example.com
+published_at: "2026-03-15T10:30:00.000Z"
+updated_at: "2026-03-15T10:30:00.000Z"
+---
+English markdown content here
+
+---vi---
+Vietnamese markdown content here
 ```
 
-Vietnamese fields (`title_vi`, `content_vi`, `subtitle_vi`) stored alongside English. All text NFC-normalized before insert. Language routing not yet implemented.
+Vietnamese content stored in same file separated by `---vi---` marker. All text NFC-normalized before write. `id` is `Date.now()` timestamp (preserves numeric API contract). Frontmatter parsed by `gray-matter` for zero-execution risk.
 
-**Attachments table:**
+**Analytics as append-only JSONL:**
 
-```sql
-CREATE TABLE attachments (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  post_slug TEXT NOT NULL,
-  filename TEXT NOT NULL,
-  original_name TEXT NOT NULL,
-  mime_type TEXT NOT NULL,
-  size_bytes INTEGER NOT NULL,
-  created_by TEXT NOT NULL,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  FOREIGN KEY (post_slug) REFERENCES posts(slug) ON DELETE CASCADE
-);
-CREATE INDEX IF NOT EXISTS idx_attachments_post_slug ON attachments(post_slug);
+Page views logged to `data/analytics.jsonl` (one JSON object per line):
+
+```json
+{"path":"/p/hello-world","ip":"1.2.3.4","ua":"Mozilla/5.0...","ref":"https://google.com","ts":"2026-04-05T10:30:00.000Z"}
 ```
 
-Stores metadata for extracted inline images. Deleted cascade when post is deleted.
+**Images as flat files:**
+
+Extracted data URIs saved to `uploads/{slug}/{uuid}.{ext}`. Directory cascade-deleted when post is deleted.
 
 ## API Endpoints
 
@@ -105,7 +104,8 @@ Write endpoints are rate-limited (20 req/min per IP). POST/PUT to `/api/posts` a
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `PORT` | `3000` | Server port |
-| `DB_PATH` | `./blog.db` | SQLite file path |
+| `CONTENT_DIR` | `./content` | Posts directory path |
+| `DATA_DIR` | `./data` | Analytics & logs directory |
 | `SITE_URL` | `http://localhost:{PORT}` | Base URL for feeds/OpenGraph |
 | `SITE_TITLE` | `The Wire` | RSS feed title |
 | `SITE_DESCRIPTION` | `A lightweight blog powered by agents` | RSS/OpenGraph fallback |
@@ -117,7 +117,8 @@ Write endpoints are rate-limited (20 req/min per IP). POST/PUT to `/api/posts` a
 - **Auth:** Bearer tokens from `tokens.json`, hot-reloaded with 5s cache (see `docs/token-management.md`)
 - **XSS:** HTML escaped via `esc()`, Markdown HTML tags stripped (`marked.use({ renderer: { html: () => '' } })`)
 - **Headers:** `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, CSP
-- **SQL:** Parameterized queries only
+- **Frontmatter:** Parsed via `gray-matter` (YAML only, no code execution risk)
+- **Path traversal:** Slug validation prevents directory escape in `content/{slug}/`
 - **Errors:** Generic "Internal server error" responses, no stack traces leaked
 
 ## Running
@@ -130,10 +131,20 @@ npm run test:watch                # Watch mode
 docker compose up                 # Docker
 ```
 
+## Migration from SQLite
+
+If upgrading from SQLite version, run:
+
+```bash
+node scripts/migrate-sqlite-to-files.js [path-to-blog.db]
+```
+
+Converts all posts to flat files and JSONL analytics. Preserves post IDs in frontmatter. `uploads/` directory unchanged. See phase documentation for details.
+
 ## Future Ideas
 
 - Draft preview for authenticated users
 - Categories/tags + search
 - Scheduled publishing
 - Role-based access control (admin vs writer enforcement)
-- PostgreSQL migration for multi-server scaling
+- Multi-server scaling (file sync strategy TBD)

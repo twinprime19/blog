@@ -4,9 +4,11 @@ services:
     ports:
       - "3000:3000"
     volumes:
+      - ./content:/app/content
       - ./data:/app/data
+      - ./uploads:/app/uploads
       - ./tokens.json:/app/tokens.json:ro
     environment:
       - PORT=3000
-      - DB_PATH=/app/data/blog.db
+      - CONTENT_DIR=/app/content
     restart: unless-stopped

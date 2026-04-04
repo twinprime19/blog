@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { writeFileSync, mkdirSync } from 'fs';
+import { join } from 'path';
+import matter from 'gray-matter';
 import { app, clearPosts, apiRequest, WRITER_A_TOKEN, WRITER_B_TOKEN } from './setup.js';
+import { contentDir } from '../config.js';
+import { resetIndex } from '../content-store.js';
 
 beforeEach(() => clearPosts());
 
@@ -225,8 +230,14 @@ describe('Ownership — writer token scoping', () => {
   });
 
   it('writer cannot delete legacy post (created_by=NULL)', async () => {
-    const { db } = await import('./setup.js');
-    db.prepare("INSERT INTO posts (slug, title, content, author) VALUES ('legacy', 'Legacy', 'old', 'Admin')").run();
+    // Write a post.md file directly with no created_by in frontmatter
+    const legacyDir = join(contentDir, 'legacy');
+    mkdirSync(legacyDir, { recursive: true });
+    writeFileSync(join(legacyDir, 'post.md'), matter.stringify('old', {
+      id: Date.now(), slug: 'legacy', title: 'Legacy', author: 'Admin', status: 'published',
+      published_at: new Date().toISOString(), updated_at: new Date().toISOString()
+    }));
+    resetIndex();
     const ip = `10.0.6.${Math.floor(Math.random() * 255)}`;
     const hdrs = (t) => ({ Authorization: `Bearer ${t}`, 'Content-Type': 'application/json', 'X-Forwarded-For': ip });
     const res = await app.request('/api/posts/legacy', { method: 'DELETE', headers: hdrs(WRITER_A_TOKEN) });

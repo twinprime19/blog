@@ -3,7 +3,7 @@ import { cors } from 'hono/cors';
 import { bodyLimit } from 'hono/body-limit';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { port } from './config.js';
-import db from './db.js';
+import { logView } from './analytics-store.js';
 import webhookRoutes from './routes/webhook-routes.js';
 import apiRoutes from './routes/api-routes.js';
 import pageRoutes from './routes/page-routes.js';
@@ -43,9 +43,6 @@ app.onError((err, c) => {
 });
 
 // --- Analytics: log page views ---
-const logView = db.prepare(
-  'INSERT INTO page_views (path, ip, user_agent, referer) VALUES (?, ?, ?, ?)'
-);
 app.use('*', async (c, next) => {
   await next();
   const path = new URL(c.req.url).pathname;
@@ -54,7 +51,7 @@ app.use('*', async (c, next) => {
       const ip = c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown';
       const ua = c.req.header('user-agent') || '';
       const ref = c.req.header('referer') || '';
-      logView.run(path, ip, ua, ref);
+      logView(path, ip, ua, ref);
     } catch {}
   }
 });

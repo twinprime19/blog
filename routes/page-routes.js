@@ -2,8 +2,8 @@ import { Hono } from 'hono';
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import db from '../db.js';
 import { esc, markedInstance } from '../helpers.js';
+import { listPosts, getPost } from '../content-store.js';
 import { validateSlug } from '../validation.js';
 import { siteUrl, siteDescription } from '../config.js';
 
@@ -85,10 +85,7 @@ ${meta}
 
 // Home
 pages.get('/', (c) => {
-  const posts = db.prepare(`
-    SELECT slug, title, title_vi, subtitle, subtitle_vi, author, cover_image, published_at
-    FROM posts WHERE status='published' ORDER BY published_at DESC LIMIT 50
-  `).all();
+  const posts = listPosts({ status: 'published', limit: 50 });
 
   const cards = posts.length === 0
     ? '<p style="color:var(--muted)">No posts yet.</p>'
@@ -113,7 +110,8 @@ pages.get('/p/:slug', (c) => {
   const slugErr = validateSlug(slug);
   if (slugErr) return c.html(layout('Not Found', '<h1>Post not found</h1>'), 404);
 
-  const post = db.prepare('SELECT * FROM posts WHERE slug = ? AND status = ?').get(slug, 'published');
+  const post = getPost(slug);
+  if (post && post.status !== 'published') return c.html(layout('Not Found', '<h1>Post not found</h1>'), 404);
   if (!post) return c.html(layout('Not Found', '<h1>Post not found</h1>'), 404);
 
   const htmlEn = markedInstance.parse(post.content);

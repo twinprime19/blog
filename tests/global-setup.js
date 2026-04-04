@@ -1,5 +1,6 @@
-// Manages tokens.json lifecycle for all test files (runs once, not per-file)
-import { writeFileSync, existsSync, readFileSync, unlinkSync } from 'fs';
+// Manages tokens.json lifecycle + test dir cleanup for all test files (runs once, not per-file)
+// CONTENT_DIR and DATA_DIR env vars are set by vitest.config.js
+import { writeFileSync, existsSync, readFileSync, unlinkSync, rmSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -26,4 +27,8 @@ export function teardown() {
   } else {
     try { unlinkSync(tokensPath); } catch {}
   }
+  // Clean up project-relative test dirs
+  const root = join(__dirname, '..');
+  try { rmSync(join(root, '.test-content'), { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }); } catch {}
+  try { rmSync(join(root, '.test-data'), { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }); } catch {}
 }

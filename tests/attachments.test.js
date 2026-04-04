@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { rm, readFile, access } from 'fs/promises';
+import { rm, readFile, access, readdir } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { clearPosts, apiRequest, app, db } from './setup.js';
+import { clearPosts, apiRequest, app } from './setup.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const UPLOADS_DIR = join(__dirname, '..', 'uploads');
@@ -200,7 +200,7 @@ describe('Static serving', () => {
 });
 
 describe('Cascade cleanup on DELETE', () => {
-  it('DELETE post removes attachment rows and disk directory', async () => {
+  it('DELETE post removes upload files and disk directory', async () => {
     const uri1 = makeDataUri(VALID_PNG, 'image/png');
     const uri2 = makeDataUri(VALID_JPEG, 'image/jpeg');
     const createRes = await apiRequest('POST', '/api/posts', {
@@ -211,9 +211,9 @@ describe('Cascade cleanup on DELETE', () => {
     const slug = (await createRes.json()).slug;
     const uploadDir = join(UPLOADS_DIR, slug);
 
-    // Verify attachments exist in DB
-    const before = db.prepare('SELECT COUNT(*) as n FROM attachments WHERE post_slug = ?').get(slug).n;
-    expect(before).toBe(2);
+    // Verify files exist on disk
+    const before = await readdir(uploadDir);
+    expect(before.length).toBe(2);
 
     // Verify directory exists
     let dirExists = await fileExists(uploadDir);
@@ -222,10 +222,6 @@ describe('Cascade cleanup on DELETE', () => {
     // Delete post
     const deleteRes = await apiRequest('DELETE', `/api/posts/${slug}`);
     expect(deleteRes.status).toBe(200);
-
-    // Verify cascade deleted attachments
-    const after = db.prepare('SELECT COUNT(*) as n FROM attachments WHERE post_slug = ?').get(slug).n;
-    expect(after).toBe(0);
 
     // Verify directory removed
     dirExists = await fileExists(uploadDir);
@@ -255,24 +251,21 @@ describe('Bilingual content (content_vi)', () => {
   });
 });
 
-describe('Attachment DB schema', () => {
-  it('attachments table has correct schema and constraints', async () => {
+describe('Attachment file on disk', () => {
+  it('uploaded file has correct extension and response shape', async () => {
     const uri = makeDataUri(VALID_PNG, 'image/png');
     const res = await apiRequest('POST', '/api/posts', {
       title: 'Schema Check',
       content: `![test](${uri})`,
     });
 
-    const slug = (await res.json()).slug;
-    const att = db.prepare('SELECT * FROM attachments WHERE post_slug = ?').get(slug);
-
-    expect(att).toBeDefined();
-    expect(att.post_slug).toBe(slug);
-    expect(att.mime_type).toBe('image/png');
-    expect(att.size_bytes).toBe(VALID_PNG.length);
-    expect(att.filename).toMatch(/^[a-f0-9-]+\.png$/);
-    expect(att.created_by).toBeDefined();
-    expect(att.created_at).toBeDefined();
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body.images).toHaveLength(1);
+    expect(body.images[0].mime_type).toBe('image/png');
+    expect(body.images[0].size).toBe(VALID_PNG.length);
+    expect(body.images[0].url).toMatch(/\.png$/);
+    expect(body.images[0].alt).toBe('test');
   });
 });
 
@@ -304,7 +297,7 @@ Some whitespace-heavy text
     expect(body.images[2].alt).toBe('pdf-doc');
   });
 
-  it('query attachment index works', async () => {
+  it('uploaded file exists on disk after post creation', async () => {
     const uri = makeDataUri(VALID_PNG, 'image/png');
     const res = await apiRequest('POST', '/api/posts', {
       title: 'Index Test',
@@ -312,7 +305,7 @@ Some whitespace-heavy text
     });
 
     const slug = (await res.json()).slug;
-    const atts = db.prepare('SELECT * FROM attachments WHERE post_slug = ?').all(slug);
-    expect(atts).toHaveLength(1);
+    const files = await readdir(join(UPLOADS_DIR, slug));
+    expect(files).toHaveLength(1);
   });
 });

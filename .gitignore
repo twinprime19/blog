@@ -1,13 +1,14 @@
 node_modules/
-*.db
-*.db-shm
-*.db-wal
 tokens.json
 .env
 deploy-failure.log
 release-manifest.json
+content/
+data/
 uploads/*
 !uploads/.gitkeep
 .claude/
 .opencode/
 .repomixignore
+.test-content/
+.test-data/

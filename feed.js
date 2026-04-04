@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
-import db from './db.js';
 import { siteUrl, siteTitle, siteDescription } from './config.js';
+import { listPosts } from './content-store.js';
 
 const feed = new Hono();
 
@@ -17,17 +17,14 @@ const toDateStr = (d) => {
 
 // RSS 2.0 feed — latest 20 published posts
 feed.get('/rss.xml', (c) => {
-  const posts = db.prepare(`
-    SELECT slug, title, subtitle, author, published_at
-    FROM posts WHERE status='published' ORDER BY published_at DESC LIMIT 20
-  `).all();
+  const posts = listPosts({ status: 'published', limit: 20 });
 
   const items = posts.map(p => `
     <item>
       <title>${escXml(p.title)}</title>
       <link>${escXml(siteUrl)}/p/${escXml(p.slug)}</link>
       <guid>${escXml(siteUrl)}/p/${escXml(p.slug)}</guid>
-      <pubDate>${new Date(p.published_at + 'Z').toUTCString()}</pubDate>
+      <pubDate>${new Date(p.published_at).toUTCString()}</pubDate>
       <dc:creator>${escXml(p.author)}</dc:creator>
       ${p.subtitle ? `<description>${escXml(p.subtitle)}</description>` : ''}
     </item>`).join('');
@@ -50,9 +47,7 @@ feed.get('/rss.xml', (c) => {
 
 // Sitemap — all published posts
 feed.get('/sitemap.xml', (c) => {
-  const posts = db.prepare(`
-    SELECT slug, updated_at FROM posts WHERE status='published' ORDER BY published_at DESC
-  `).all();
+  const posts = listPosts({ status: 'published' });
 
   const urls = posts.map(p => `
   <url>

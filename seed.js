@@ -1,4 +1,4 @@
-import db from './db.js';
+import { createPost, getPost } from './content-store.js';
 
 const sample = {
   slug: 'welcome-to-the-wire',
@@ -24,7 +24,7 @@ curl -X POST http://localhost:3000/api/posts \\
   }'
 \`\`\`
 
-Posts are stored in SQLite and rendered as clean, readable pages. Markdown is fully supported — headers, lists, code blocks, blockquotes, images, the works.
+Posts are stored as Markdown files and rendered as clean, readable pages. Markdown is fully supported — headers, lists, code blocks, blockquotes, images, the works.
 
 ## What's coming
 
@@ -37,11 +37,12 @@ This space will be used for curated briefings and updates on topics that matter.
 };
 
 try {
-  db.prepare(`
-    INSERT OR IGNORE INTO posts (slug, title, subtitle, content, author, status)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(sample.slug, sample.title, sample.subtitle, sample.content, sample.author, sample.status);
-  console.log('Seed post created.');
+  if (!getPost(sample.slug)) {
+    createPost(sample);
+    console.log('Seed post created.');
+  } else {
+    console.log('Seed skipped: already exists.');
+  }
 } catch (e) {
   console.log('Seed skipped:', e.message);
 }
