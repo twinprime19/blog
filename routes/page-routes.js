@@ -33,7 +33,7 @@ const layout = (title, body, meta = '') => `<!DOCTYPE html>
 <link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml">
 ${meta}
 <style>
-  :root { --bg: #fff; --text: #1a1a1a; --muted: #6b6b6b; --border: #e6e6e6; --accent: #ff6719; --max-w: 680px; }
+  :root { --bg: #fff; --text: #1a1a1a; --muted: #6b6b6b; --border: #e6e6e6; --accent: #ff6719; --max-w: 800px; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'Noto Serif', 'Times New Roman', 'Georgia', serif; color: var(--text); background: var(--bg); line-height: 1.7; }
   a { color: var(--accent); text-decoration: none; }
@@ -65,8 +65,11 @@ ${meta}
   .post-full .content blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; margin: 1.5rem 0; color: var(--muted); font-style: italic; }
   .post-full .content img { max-width: 100%; border-radius: 4px; }
   .post-full .content code { background: #f5f5f5; padding: 0.15em 0.4em; border-radius: 3px; font-size: 0.9em; }
-  .post-full .content pre { background: #f5f5f5; padding: 1rem; border-radius: 6px; overflow-x: auto; margin-bottom: 1.2rem; }
+  .post-full .content pre { background: #f5f5f5; padding: 1rem; border-radius: 6px; overflow-x: auto; margin-bottom: 1.2rem; position: relative; }
   .post-full .content pre code { background: none; padding: 0; }
+  .post-full .content pre .copy-btn { position: absolute; top: 0.5rem; right: 0.5rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 0.75rem; padding: 0.25rem 0.5rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--muted); cursor: pointer; opacity: 0; transition: opacity 0.2s; }
+  .post-full .content pre:hover .copy-btn { opacity: 1; }
+  .post-full .content pre .copy-btn:hover { color: var(--text); border-color: var(--text); }
 
   .lang-toggle { display: flex; gap: 0.5rem; margin-bottom: 1.2rem; }
   .lang-btn { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 0.85rem; padding: 0.4rem 0.9rem; border: 1px solid var(--border); border-radius: 20px; background: var(--bg); color: var(--muted); cursor: pointer; transition: all 0.2s; }
@@ -80,6 +83,21 @@ ${meta}
 <header><div class="inner"><a href="/" class="logo">The Wire</a></div></header>
 <main>${body}</main>
 <footer>Powered by agents · ${new Date().getFullYear()}</footer>
+<script>
+document.querySelectorAll('.post-full .content pre').forEach(pre => {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.textContent = 'Copy';
+  btn.addEventListener('click', () => {
+    const code = pre.querySelector('code');
+    navigator.clipboard.writeText(code ? code.textContent : pre.textContent).then(() => {
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+    });
+  });
+  pre.appendChild(btn);
+});
+</script>
 </body>
 </html>`;
 
