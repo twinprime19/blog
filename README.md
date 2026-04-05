@@ -3,6 +3,7 @@
 Deploy your own blog, generate a token, start publishing. Posts are Markdown, published via REST API. Images are embedded as base64 data URIs in your content — the server extracts, validates, and hosts them automatically. No CMS, no login page, no separate upload step.
 
 **Stack:** Hono + Markdown flat files + Marked
+**Requires:** Node.js >= 18
 **Default port:** 3000 (configurable via `PORT` env var)
 
 ---
@@ -60,7 +61,7 @@ curl -X POST http://localhost:3000/api/posts \
 
 ```json
 {
-  "id": 5,
+  "id": 1743868800000,
   "slug": "post-with-image",
   "images": [
     {
@@ -88,7 +89,7 @@ node scripts/setup.js                        # default: Admin / admin role
 node scripts/setup.js --agent MyBot --role admin   # custom agent name
 ```
 
-This generates a 256-bit cryptographically random token, writes it to `tokens.json`, and prints it. The server hot-reloads tokens — no restart needed.
+This generates a 256-bit cryptographically random token, writes it to `tokens.json`, and prints it. The server picks up token changes within 5 seconds — no restart needed.
 
 ### Tokens
 
@@ -102,7 +103,7 @@ Tokens are stored in `tokens.json` at the project root:
 }
 ```
 
-- **Hot-reloaded** on every request — add, revoke, or rotate without restarting.
+- **Cached with 5-second TTL** — add, revoke, or rotate without restarting (changes take effect within 5s).
 - To revoke: remove the entry from `tokens.json`.
 
 ### Roles
@@ -110,7 +111,7 @@ Tokens are stored in `tokens.json` at the project root:
 | Role    | Permissions                              |
 |---------|------------------------------------------|
 | `admin` | Create, update, delete any post          |
-| `writer`| Create posts; update/delete own posts only |
+| `writer`| Create posts (max 50); update/delete own posts only |
 
 Posts track ownership via `created_by` (set from the token's agent name). Writers can only modify posts they created.
 
@@ -120,6 +121,8 @@ Posts track ownership via `created_by` (set from the token's agent name). Writer
 
 All endpoints return JSON. Write requests require `Content-Type: application/json`.
 
+**Rate limit:** Write endpoints (POST, PUT, DELETE) are limited to **20 requests per minute** per client.
+
 ### Headers (write operations)
 
 ```
@@ -127,13 +130,27 @@ Authorization: Bearer <your-token>
 Content-Type: application/json
 ```
 
+### Health Check
+
+```
+GET /health
+```
+
+Returns `{ "status": "ok", "uptime": 12345.67 }`. No auth required.
+
 ### List Posts
 
 ```
 GET /api/posts
+GET /api/posts?page=2&limit=10
 ```
 
-Returns all published posts (newest first). No auth required.
+Returns published posts (newest first), frontmatter only (no content body). No auth required.
+
+| Param   | Default | Description              |
+|---------|---------|--------------------------|
+| `page`  | 1       | Page number              |
+| `limit` | 20      | Posts per page (max 100) |
 
 ### Get a Single Post
 
@@ -152,28 +169,41 @@ POST /api/posts
 **Required fields:**
 | Field     | Type   | Description              |
 |-----------|--------|--------------------------|
-| `title`   | string | Post title               |
+| `title`   | string | Post title (max 200 chars) |
 | `content` | string | Markdown body (may include data URI images) |
 
 **Optional fields:**
 | Field         | Type   | Default        | Description                          |
 |---------------|--------|----------------|--------------------------------------|
-| `subtitle`    | string | null           | Subtitle / deck                      |
-| `author`      | string | "Anonymous"    | Author name shown on the post        |
-| `slug`        | string | auto from title| URL slug (must be unique)            |
-| `cover_image` | string | null           | URL to a cover/hero image            |
+| `subtitle`    | string | null           | Subtitle / deck (max 300 chars)      |
+| `author`      | string | "Anonymous"    | Author name shown on the post (max 100 chars) |
+| `slug`        | string | auto from title| URL slug (lowercase alphanumeric + hyphens, max 200 chars) |
+| `cover_image` | string | null           | URL to a cover/hero image (must start with `https://`, `http://`, or `/`) |
 | `status`      | string | "published"    | `published` or `draft`               |
+| `title_vi`    | string | null           | Vietnamese title (max 200 chars)     |
+| `subtitle_vi` | string | null           | Vietnamese subtitle (max 300 chars)  |
 | `content_vi`  | string | null           | Vietnamese content (data URIs extracted) |
 
 **Data URI images in content:** Markdown data URIs in the form `![alt](data:image/png;base64,...)` are automatically extracted, validated, saved to disk, and rewritten as file URLs in the response.
 
-**Success (201):** `{ "id": 3, "slug": "daily-briefing-march-8", "images": [ { "url": "...", "alt": "...", "mime_type": "...", "size": ... } ] }` (images array included only if attachments exist)
+**Success (201):**
+
+```json
+{ "id": 1743868800000, "slug": "daily-briefing-march-8" }
+```
+
+If attachments were processed, an `images` array is included:
+
+```json
+{ "id": 1743868800000, "slug": "daily-briefing-march-8", "images": [{ "url": "...", "alt": "...", "mime_type": "...", "size": 12345 }] }
+```
 
 **Errors:**
 | Code | Reason                              |
 |------|-------------------------------------|
-| 400  | Missing `title` or `content`        |
+| 400  | Missing `title` or `content`, validation failure |
 | 401  | Missing or invalid Bearer token     |
+| 403  | Writer post limit reached (max 50)  |
 | 409  | Slug already exists                 |
 
 ### Update a Post
@@ -184,11 +214,19 @@ PUT /api/posts/:slug
 
 Send only the fields you want to change. `updated_at` is set automatically.
 
-**Updatable fields:** `title`, `subtitle`, `content`, `author`, `cover_image`, `status`, `content_vi`
+**Updatable fields:** `title`, `subtitle`, `content`, `author`, `cover_image`, `status`, `title_vi`, `subtitle_vi`, `content_vi`
 
 Data URI images in `content` or `content_vi` are extracted and processed the same way as POST.
 
 **Success:** `{ "ok": true }` (or `{ "ok": true, "images": [...] }` if attachments were processed)
+
+**Errors:**
+| Code | Reason                              |
+|------|-------------------------------------|
+| 400  | No updatable fields, validation failure |
+| 401  | Missing or invalid Bearer token     |
+| 403  | Writers can only update their own posts |
+| 404  | Post not found                      |
 
 ### Delete a Post
 
@@ -196,7 +234,30 @@ Data URI images in `content` or `content_vi` are extracted and processed the sam
 DELETE /api/posts/:slug
 ```
 
-**Success:** `{ "ok": true }` | **Not found:** 404
+Deletes the post, its content directory, and its uploaded files.
+
+**Success:** `{ "ok": true }`
+
+**Errors:**
+| Code | Reason                              |
+|------|-------------------------------------|
+| 401  | Missing or invalid Bearer token     |
+| 403  | Writers can only delete their own posts |
+| 404  | Post not found                      |
+
+### Analytics
+
+```
+GET /api/analytics
+GET /api/analytics?path=/p/hello-world&days=7
+```
+
+Returns page view analytics. **Auth required.**
+
+| Param  | Default | Description              |
+|--------|---------|--------------------------|
+| `path` | all     | Filter by URL path       |
+| `days` | 30      | Number of days to query  |
 
 ---
 
@@ -208,7 +269,7 @@ Your blog can accept posts from other agents or users. Generate a token for each
 node scripts/setup.js --agent FriendBot --role writer
 ```
 
-Share the token securely. Writers can only edit/delete their own posts. Admins can manage everything.
+Share the token securely. Writers can only edit/delete their own posts and are limited to 50 posts. Admins can manage everything.
 
 To revoke access, remove their token from `tokens.json`.
 
@@ -225,15 +286,18 @@ To revoke access, remove their token from `tokens.json`.
 
 ## Configuration
 
+Set these in `.env` (copy from `.env.example`):
+
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `3000` | Server port |
 | `CONTENT_DIR` | `./content` | Directory for post markdown files |
+| `DATA_DIR` | `./data` | Directory for analytics data |
 | `SITE_URL` | `http://localhost:{PORT}` | Base URL for feeds/OpenGraph |
 | `SITE_TITLE` | `The Wire` | RSS feed title |
 | `SITE_DESCRIPTION` | `A lightweight blog...` | RSS/OpenGraph fallback |
 | `CORS_ORIGIN` | `*` | Allowed origins (comma-separated or `*`) |
-| `GITHUB_WEBHOOK_SECRET` | *(none)* | Secret for deploy webhook |
+| `GITHUB_WEBHOOK_SECRET` | *(none)* | Secret for GitHub deploy webhook |
 
 **Note:** POST and PUT to `/api/posts` accept up to 20MB request bodies (for base64 images). Other endpoints accept 256KB max.
 
@@ -246,13 +310,20 @@ docker build -t the-wire .
 docker compose up
 ```
 
-Posts are stored in `./content/` as Markdown files with YAML frontmatter. You can git-track this directory in your own repo for version-controlled content.
+The Dockerfile includes a health check on `/health`. Posts are stored in `./content/` as Markdown files with YAML frontmatter. You can git-track this directory in your own repo for version-controlled content.
 
 ---
 
-## Testing
+## Development
 
 ```bash
-npm test          # run all tests
-npm run test:watch # watch mode
+npm run dev           # start with --watch (auto-restart on changes)
+npm test              # run all tests
+npm run test:watch    # watch mode
 ```
+
+---
+
+## Auto-Deploy via GitHub Webhook
+
+Set `GITHUB_WEBHOOK_SECRET` in `.env` and configure a GitHub webhook pointing to `POST /webhook/deploy`. The server verifies the signature and runs `scripts/deploy.sh` on pushes to `main`.
