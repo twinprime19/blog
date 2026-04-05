@@ -84,9 +84,6 @@ function _writePost(slug, frontmatter, content, contentVi) {
     _ensureDir(dir);
     writeFileSync(finalPath, fileContent, 'utf-8');
   }
-
-  // Invalidate index
-  _index = null;
 }
 
 // --- Public API ---
@@ -156,6 +153,8 @@ export function createPost(data) {
   const contentVi = nfc(data.content_vi) || null;
 
   _writePost(slug, frontmatter, content, contentVi);
+  // Incremental index update — avoids full O(N) re-scan
+  if (_index) _index.set(slug, { ...frontmatter });
   return { id, slug };
 }
 
@@ -186,6 +185,8 @@ export function updatePost(slug, data) {
   const contentVi = data.content_vi !== undefined ? nfc(data.content_vi) : existing.content_vi;
 
   _writePost(slug, fm, content, contentVi);
+  // Incremental index update — avoids full O(N) re-scan
+  if (_index) _index.set(slug, { ...fm });
 }
 
 export function deletePost(slug) {
@@ -200,6 +201,7 @@ export function deletePost(slug) {
   const uploadsDir = join(process.cwd(), 'uploads', slug);
   try { rmSync(uploadsDir, { recursive: true, force: true }); } catch {}
 
-  _index = null;
+  // Incremental index update — avoids full O(N) re-scan
+  if (_index) _index.delete(slug);
   return true;
 }
