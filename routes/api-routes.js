@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { createRateLimiter } from '../middleware/rate-limit.js';
 import { processContentImages } from '../process-content-images.js';
 import { listPosts, getPost, createPost, updatePost, deletePost, getIndex } from '../content-store.js';
+import { slugify } from '../helpers.js';
 
 const api = new Hono();
 const writeLimit = createRateLimiter({ windowMs: 60_000, max: 20 });
@@ -33,7 +34,7 @@ api.post('/api/posts', requireAuth, writeLimit, async (c) => {
   const { title, content, subtitle, author, cover_image, status, slug, content_vi, title_vi, subtitle_vi } = body;
   const validationError = validatePost(body);
   if (validationError) return c.json({ error: validationError }, 400);
-  const finalSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `post-${Date.now()}`;
+  const finalSlug = slug || slugify(title) || `post-${Date.now()}`;
   // M2: Validate auto-generated slugs
   if (!slug) {
     const autoSlugErr = validateSlug(finalSlug);

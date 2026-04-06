@@ -1,5 +1,36 @@
 import { describe, it, expect } from 'vitest';
 import { apiRequest } from './setup.js';
+import { slugify } from '../helpers.js';
+
+describe('slugify', () => {
+  it('transliterates Vietnamese tone marks', () => {
+    expect(slugify('Bài viết về trí tuệ nhân tạo')).toBe('bai-viet-ve-tri-tue-nhan-tao');
+  });
+
+  it('transliterates đ and Đ', () => {
+    expect(slugify('Đường đến thành công')).toBe('duong-den-thanh-cong');
+  });
+
+  it('handles plain ASCII', () => {
+    expect(slugify('Hello World')).toBe('hello-world');
+  });
+
+  it('preserves numbers', () => {
+    expect(slugify('Top 10 Tips')).toBe('top-10-tips');
+  });
+
+  it('returns empty string for empty input', () => {
+    expect(slugify('')).toBe('');
+  });
+
+  it('collapses special characters to single hyphen', () => {
+    expect(slugify('Hello!@#World')).toBe('hello-world');
+  });
+
+  it('trims leading and trailing hyphens', () => {
+    expect(slugify('---test---')).toBe('test');
+  });
+});
 
 describe('Input validation', () => {
   it('rejects missing title', async () => {

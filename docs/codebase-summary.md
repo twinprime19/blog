@@ -13,7 +13,7 @@ blog/
 ├── content-store.js        # Post CRUD via flat-file markdown + gray-matter frontmatter
 ├── analytics-store.js      # Page view logging via JSONL append-log
 ├── feed.js                 # RSS 2.0 (/rss.xml) and sitemap (/sitemap.xml) routes
-├── helpers.js              # nfc() Unicode normalizer
+├── helpers.js              # nfc() Unicode normalizer; slugify() Vietnamese diacritics → ASCII
 ├── server.js               # HTTP server entry point
 ├── seed.js                 # Seed flat-file posts
 ├── validation.js           # Input validation (slug format, post fields, lengths)

@@ -177,7 +177,7 @@ POST /api/posts
 |---------------|--------|----------------|--------------------------------------|
 | `subtitle`    | string | null           | Subtitle / deck (max 300 chars)      |
 | `author`      | string | "Anonymous"    | Author name shown on the post (max 100 chars) |
-| `slug`        | string | auto from title| URL slug (lowercase alphanumeric + hyphens, max 200 chars) |
+| `slug`        | string | auto from title| URL slug (Vietnamese diacritics transliterated to ASCII; lowercase alphanumeric + hyphens, max 200 chars) |
 | `cover_image` | string | null           | URL to a cover/hero image (must start with `https://`, `http://`, or `/`) |
 | `status`      | string | "published"    | `published` or `draft`               |
 | `title_vi`    | string | null           | Vietnamese title (max 200 chars)     |

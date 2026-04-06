@@ -13,4 +13,17 @@ const nfc = (s) => s != null ? String(s).normalize('NFC') : null;
 const markedInstance = new Marked();
 markedInstance.use({ renderer: { html: () => '' } });
 
-export { esc, nfc, markedInstance };
+// Transliterate Vietnamese diacritics to ASCII and produce URL-safe slugs
+// đ/Đ must be replaced before NFD — they don't decompose
+function slugify(text) {
+  if (!text) return '';
+  return text
+    .replace(/[đĐ]/g, 'd')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+export { esc, nfc, markedInstance, slugify };
