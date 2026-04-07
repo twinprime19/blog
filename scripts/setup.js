@@ -56,6 +56,9 @@ if (blogName) {
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
 }
 
+// Seed welcome post on first run (idempotent — skips if already exists)
+await import('../seed.js');
+
 console.log('--- Setup Complete ---');
 if (blogName) console.log(`Blog:  ${blogName}`);
 console.log(`Agent: ${agent}`);

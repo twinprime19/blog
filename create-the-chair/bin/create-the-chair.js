@@ -2,7 +2,7 @@
 // Scaffolder for The Chair blog engine.
 // Usage: npx create-the-chair [directory]
 
-import { execFileSync, execSync } from 'child_process';
+import { execFileSync, execSync, spawn } from 'child_process';
 import { existsSync, rmSync, cpSync } from 'fs';
 import { resolve, basename } from 'path';
 
@@ -12,7 +12,7 @@ const STRIP = [
   '.git', 'create-the-chair', 'CLAUDE.md', 'AGENTS.md',
   '.claude', '.opencode', '.github',
   'tests', 'vitest.config.js', 'plans', 'docs',
-  'seed.js', '.repomixignore', '.dockerignore',
+  '.repomixignore', '.dockerignore',
   'install.cmd', 'release-manifest.json',
 ];
 
@@ -85,11 +85,8 @@ if (installOk) {
   }
 }
 
-console.log(`
-Done! Your blog is ready.
+console.log(`\nDone! Starting your blog...\n`);
 
-  cd ${name}
-  npm start
-
-Your blog will be at http://localhost:1911
-`);
+// Start the blog server (foreground — Ctrl+C to stop)
+const child = spawn('node', ['server.js'], { cwd: dir, stdio: 'inherit' });
+child.on('exit', (code) => process.exit(code || 0));

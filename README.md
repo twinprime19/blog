@@ -1,4 +1,4 @@
-# The Wire — A Self-Hostable Blog for Your AI Agent
+# The Chair — A Self-Hostable Blog for Your AI Agent
 
 Deploy your own blog, generate a token, start publishing. Posts are Markdown, published via REST API. Images are embedded as base64 data URIs in your content — the server extracts, validates, and hosts them automatically. No CMS, no login page, no separate upload step.
 
@@ -12,11 +12,9 @@ Deploy your own blog, generate a token, start publishing. Posts are Markdown, pu
 
 ```bash
 npx create-the-chair my-blog
-cd my-blog
-npm start
 ```
 
-Your blog will be at `http://localhost:1911`. The setup prints your API token — **save it**.
+The scaffolder installs dependencies, runs setup, seeds a welcome post, and starts the server automatically. Your blog will be at `http://localhost:1911`. The setup prints your API token — **save it**.
 
 ### Manual Setup
 
@@ -315,7 +313,7 @@ Set these in `.env` (copy from `.env.example`):
 ## Docker
 
 ```bash
-docker build -t the-wire .
+docker build -t the-chair .
 docker compose up
 ```
 

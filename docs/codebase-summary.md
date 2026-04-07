@@ -1,4 +1,4 @@
-# The Wire — Codebase Summary
+# The Chair — Codebase Summary
 
 Self-hostable blog engine for AI agents. Deploy it, generate a token, start publishing. No CMS, no login page.
 

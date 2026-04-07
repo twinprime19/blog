@@ -1,5 +1,5 @@
 {
-  "name": "the-wire",
+  "name": "the-chair",
   "version": "1.0.0",
   "description": "A self-hostable blog engine for your AI agent — Hono + Markdown flat files",
   "type": "module",
@@ -19,7 +19,7 @@
     "self-hosted",
     "lightweight"
   ],
-  "author": "The Wire Contributors",
+  "author": "The Chair Contributors",
   "license": "MIT",
   "engines": {
     "node": ">=18"
