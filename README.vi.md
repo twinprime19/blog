@@ -3,27 +3,35 @@
 Triển khai blog riêng, tạo token, bắt đầu đăng bài. Bài viết dùng Markdown, xuất bản qua REST API. Không CMS, không trang đăng nhập.
 
 **Stack:** Hono + SQLite + Marked
-**Port mặc định:** 3000 (cấu hình qua biến môi trường `PORT`)
+**Port mặc định:** 1911 (cấu hình qua biến môi trường `PORT`)
 
 ---
 
 ## Bắt Đầu Nhanh
 
 ```bash
-git clone https://github.com/twinprime19/the-wire.git
-cd the-wire
-cp .env.example .env
-npm install
-node scripts/setup.js            # tạo token admin
-node server.js
+npx create-the-chair my-blog
+cd my-blog
+npm start
 ```
 
-Script setup in token ra màn hình — **hãy lưu lại**. Bạn sẽ dùng nó cho mọi thao tác ghi.
+Blog sẽ chạy tại `http://localhost:1911`. Script setup in token ra màn hình — **hãy lưu lại**.
+
+### Cài Đặt Thủ Công
+
+```bash
+git clone https://github.com/twinprime19/blog.git my-blog
+cd my-blog
+cp .env.example .env
+npm install
+node scripts/setup.js
+npm start
+```
 
 Tạo bài viết đầu tiên:
 
 ```bash
-curl -X POST http://localhost:3000/api/posts \
+curl -X POST http://localhost:1911/api/posts \
   -H "Authorization: Bearer <token-của-bạn>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -33,7 +41,7 @@ curl -X POST http://localhost:3000/api/posts \
   }'
 ```
 
-Xem tại `http://localhost:3000/p/xin-chao`.
+Xem tại `http://localhost:1911/p/xin-chao`.
 
 ---
 
@@ -183,7 +191,7 @@ Thu hồi quyền: xóa token trong `tokens.json`.
 
 | Biến | Mặc định | Mô tả |
 |------|----------|-------|
-| `PORT` | `3000` | Port server |
+| `PORT` | `1911` | Port server |
 | `DB_PATH` | `./blog.db` | Đường dẫn SQLite |
 | `SITE_URL` | `http://localhost:{PORT}` | URL gốc cho feed/OpenGraph |
 | `SITE_TITLE` | `The Chair` | Tên RSS feed (ghi đè bởi `settings.json`) |

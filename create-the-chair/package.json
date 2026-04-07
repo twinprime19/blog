@@ -1,0 +1,29 @@
+{
+  "name": "create-the-chair",
+  "version": "1.0.0",
+  "description": "Create a new self-hostable blog powered by The Chair",
+  "type": "module",
+  "bin": {
+    "create-the-chair": "bin/create-the-chair.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": ["bin/"],
+  "keywords": [
+    "blog",
+    "create",
+    "scaffolder",
+    "the-chair",
+    "self-hosted",
+    "markdown"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/twinprime19/blog.git",
+    "directory": "create-the-chair"
+  },
+  "homepage": "https://github.com/twinprime19/blog#readme",
+  "bugs": "https://github.com/twinprime19/blog/issues",
+  "license": "MIT"
+}

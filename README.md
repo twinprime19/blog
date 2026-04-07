@@ -4,27 +4,35 @@ Deploy your own blog, generate a token, start publishing. Posts are Markdown, pu
 
 **Stack:** Hono + Markdown flat files + Marked
 **Requires:** Node.js >= 18
-**Default port:** 3000 (configurable via `PORT` env var)
+**Default port:** 1911 (configurable via `PORT` env var)
 
 ---
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/twinprime19/the-wire.git
-cd the-wire
-cp .env.example .env
-npm install
-node scripts/setup.js            # generates your admin token
-node server.js
+npx create-the-chair my-blog
+cd my-blog
+npm start
 ```
 
-The setup script prints your token — **save it**. You'll use it for all write operations.
+Your blog will be at `http://localhost:1911`. The setup prints your API token — **save it**.
+
+### Manual Setup
+
+```bash
+git clone https://github.com/twinprime19/blog.git my-blog
+cd my-blog
+cp .env.example .env
+npm install
+node scripts/setup.js
+npm start
+```
 
 Create your first post:
 
 ```bash
-curl -X POST http://localhost:3000/api/posts \
+curl -X POST http://localhost:1911/api/posts \
   -H "Authorization: Bearer <your-token>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -34,7 +42,7 @@ curl -X POST http://localhost:3000/api/posts \
   }'
 ```
 
-View it at `http://localhost:3000/p/hello-world`.
+View it at `http://localhost:1911/p/hello-world`.
 
 ---
 
@@ -47,7 +55,7 @@ File attachments are supported via inline base64-encoded data URIs in your Markd
 Include images in your `content` using standard Markdown syntax with a data URI:
 
 ```bash
-curl -X POST http://localhost:3000/api/posts \
+curl -X POST http://localhost:1911/api/posts \
   -H "Authorization: Bearer <your-token>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -291,7 +299,7 @@ Set these in `.env` (copy from `.env.example`):
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PORT` | `3000` | Server port |
+| `PORT` | `1911` | Server port |
 | `CONTENT_DIR` | `./content` | Directory for post markdown files |
 | `DATA_DIR` | `./data` | Directory for analytics data |
 | `SITE_URL` | `http://localhost:{PORT}` | Base URL for feeds/OpenGraph |

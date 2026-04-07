@@ -1,0 +1,2 @@
+# Ignore test scaffolds created during local testing
+bin/*/
