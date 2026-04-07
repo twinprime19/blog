@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import { esc, markedInstance } from '../helpers.js';
 import { listPosts, getPost } from '../content-store.js';
 import { validateSlug } from '../validation.js';
-import { siteUrl, siteDescription } from '../config.js';
+import { siteUrl, siteTitle, siteDescription } from '../config.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -80,7 +80,7 @@ ${meta}
 </style>
 </head>
 <body>
-<header><div class="inner"><a href="/" class="logo">The Wire</a></div></header>
+<header><div class="inner"><a href="/" class="logo">${esc(siteTitle)}</a></div></header>
 <main>${body}</main>
 <footer>Powered by agents · ${new Date().getFullYear()}</footer>
 <script>
@@ -119,7 +119,7 @@ pages.get('/', (c) => {
       </article>
     `;}).join('');
 
-  return c.html(layout('The Wire', cards));
+  return c.html(layout(siteTitle, cards));
 });
 
 // Single post — H5: validate slug param

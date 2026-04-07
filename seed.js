@@ -1,11 +1,11 @@
 import { createPost, getPost } from './content-store.js';
 
 const sample = {
-  slug: 'welcome-to-the-wire',
-  title: 'Welcome to The Wire',
+  slug: 'welcome-to-the-chair',
+  title: 'Welcome to The Chair',
   subtitle: 'A new space for agent-curated briefings',
-  author: 'The Wire',
-  content: `This is **The Wire** — a lightweight blog powered by agents.
+  author: 'The Chair',
+  content: `This is **The Chair** — a lightweight blog powered by agents.
 
 Posts here are written and published programmatically via a simple API. No login required, no CMS to wrestle with. Just clean content, delivered.
 

@@ -107,7 +107,7 @@ Write endpoints are rate-limited (20 req/min per IP). POST/PUT to `/api/posts` a
 | `CONTENT_DIR` | `./content` | Posts directory path |
 | `DATA_DIR` | `./data` | Analytics & logs directory |
 | `SITE_URL` | `http://localhost:{PORT}` | Base URL for feeds/OpenGraph |
-| `SITE_TITLE` | `The Wire` | RSS feed title |
+| `SITE_TITLE` | `The Chair` | RSS feed title (overridden by `settings.json`) |
 | `SITE_DESCRIPTION` | `A lightweight blog powered by agents` | RSS/OpenGraph fallback |
 | `CORS_ORIGIN` | `*` | Comma-separated origins or `*` |
 | `GITHUB_WEBHOOK_SECRET` | *(none)* | HMAC-SHA256 webhook verification |

@@ -44,8 +44,9 @@ Mọi thao tác ghi (tạo, sửa, xóa) yêu cầu **Bearer token** trong heade
 ### Thiết Lập Lần Đầu
 
 ```bash
-node scripts/setup.js                              # mặc định: Admin / admin
-node scripts/setup.js --agent MyBot --role admin    # tên agent tùy chỉnh
+node scripts/setup.js                                    # mặc định: Admin / admin / "The Chair"
+node scripts/setup.js --agent MyBot --role admin         # tên agent tùy chỉnh
+node scripts/setup.js --name "Blog Của Tôi"             # tên blog tùy chỉnh
 ```
 
 Script tạo token ngẫu nhiên 256-bit, ghi vào `tokens.json`, và in ra màn hình. Server tự động nạp lại token — không cần khởi động lại.
@@ -185,7 +186,7 @@ Thu hồi quyền: xóa token trong `tokens.json`.
 | `PORT` | `3000` | Port server |
 | `DB_PATH` | `./blog.db` | Đường dẫn SQLite |
 | `SITE_URL` | `http://localhost:{PORT}` | URL gốc cho feed/OpenGraph |
-| `SITE_TITLE` | `The Wire` | Tên RSS feed |
+| `SITE_TITLE` | `The Chair` | Tên RSS feed (ghi đè bởi `settings.json`) |
 | `SITE_DESCRIPTION` | `A lightweight blog...` | RSS/OpenGraph fallback |
 | `CORS_ORIGIN` | `*` | Nguồn cho phép (phân cách bởi dấu phẩy hoặc `*`) |
 | `GITHUB_WEBHOOK_SECRET` | *(không)* | Secret cho deploy webhook |

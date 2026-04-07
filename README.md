@@ -85,11 +85,12 @@ All write operations (create, update, delete) require a **Bearer token** in the 
 ### First-Run Setup
 
 ```bash
-node scripts/setup.js                        # default: Admin / admin role
-node scripts/setup.js --agent MyBot --role admin   # custom agent name
+node scripts/setup.js                                    # default: Admin / admin role / "The Chair"
+node scripts/setup.js --agent MyBot --role admin         # custom agent name
+node scripts/setup.js --name "My Blog"                   # custom blog name
 ```
 
-This generates a 256-bit cryptographically random token, writes it to `tokens.json`, and prints it. The server picks up token changes within 5 seconds — no restart needed.
+This generates a 256-bit cryptographically random token (written to `tokens.json`) and sets the blog name (written to `settings.json`). The server picks up token changes within 5 seconds — no restart needed.
 
 ### Tokens
 
@@ -294,7 +295,7 @@ Set these in `.env` (copy from `.env.example`):
 | `CONTENT_DIR` | `./content` | Directory for post markdown files |
 | `DATA_DIR` | `./data` | Directory for analytics data |
 | `SITE_URL` | `http://localhost:{PORT}` | Base URL for feeds/OpenGraph |
-| `SITE_TITLE` | `The Wire` | RSS feed title |
+| `SITE_TITLE` | `The Chair` | RSS feed title (overridden by `settings.json`) |
 | `SITE_DESCRIPTION` | `A lightweight blog...` | RSS/OpenGraph fallback |
 | `CORS_ORIGIN` | `*` | Allowed origins (comma-separated or `*`) |
 | `GITHUB_WEBHOOK_SECRET` | *(none)* | Secret for GitHub deploy webhook |

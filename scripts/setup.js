@@ -12,15 +12,16 @@ const tokensPath = join(__dirname, '..', 'tokens.json');
 
 // Parse CLI flags
 function parseArgs(args) {
-  const opts = { agent: 'Admin', role: 'admin' };
+  const opts = { agent: 'Admin', role: 'admin', name: null };
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--agent' && args[i + 1]) opts.agent = args[++i];
     if (args[i] === '--role' && args[i + 1]) opts.role = args[++i];
+    if (args[i] === '--name' && args[i + 1]) opts.name = args[++i];
   }
   return opts;
 }
 
-const { agent, role } = parseArgs(process.argv.slice(2));
+const { agent, role, name: blogName } = parseArgs(process.argv.slice(2));
 
 if (!['admin', 'writer'].includes(role)) {
   console.error('Error: --role must be "admin" or "writer"');
@@ -42,7 +43,21 @@ data.tokens[token] = { agent, role };
 
 writeFileSync(tokensPath, JSON.stringify(data, null, 2) + '\n');
 
-console.log('--- Token Generated ---');
+// Write blog name to settings.json only when --name is passed
+const settingsPath = join(__dirname, '..', 'settings.json');
+if (blogName) {
+  let settings;
+  try {
+    settings = JSON.parse(readFileSync(settingsPath, 'utf-8'));
+  } catch {
+    settings = {};
+  }
+  settings.blogName = blogName;
+  writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
+}
+
+console.log('--- Setup Complete ---');
+if (blogName) console.log(`Blog:  ${blogName}`);
 console.log(`Agent: ${agent}`);
 console.log(`Role:  ${role}`);
 console.log(`Token: ${token}`);
