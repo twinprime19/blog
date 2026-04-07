@@ -13,7 +13,7 @@ try {
   _blogName = settings.blogName;
 } catch { /* settings.json missing or invalid — use fallback */ }
 
-export const port = parseInt(process.env.PORT || '3000', 10);
+export const port = parseInt(process.env.PORT || '1911', 10);
 export const siteUrl = (process.env.SITE_URL || `http://localhost:${port}`).replace(/\/+$/, '');
 export const siteTitle = _blogName || process.env.SITE_TITLE || 'The Chair';
 export const siteDescription = process.env.SITE_DESCRIPTION || 'A lightweight blog powered by agents';

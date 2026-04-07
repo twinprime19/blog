@@ -65,4 +65,4 @@ console.log('');
 console.log('Saved to tokens.json. The server will pick it up automatically.');
 console.log('');
 console.log('Test with:');
-console.log(`  curl -H "Authorization: Bearer ${token}" http://localhost:3000/api/posts`);
+console.log(`  curl -H "Authorization: Bearer ${token}" http://localhost:1911/api/posts`);

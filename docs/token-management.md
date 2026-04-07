@@ -29,7 +29,7 @@ Share the token securely (DM, encrypted message). **Never** share tokens in publ
 ### Verify Access
 
 ```bash
-curl -X POST http://localhost:3000/api/posts \
+curl -X POST http://localhost:1911/api/posts \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"title": "Test Post", "content": "Testing access.", "status": "draft"}'

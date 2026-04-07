@@ -2,13 +2,13 @@ services:
   blog:
     build: .
     ports:
-      - "3000:3000"
+      - "1911:1911"
     volumes:
       - ./content:/app/content
       - ./data:/app/data
       - ./uploads:/app/uploads
       - ./tokens.json:/app/tokens.json:ro
     environment:
-      - PORT=3000
+      - PORT=1911
       - CONTENT_DIR=/app/content
     restart: unless-stopped

@@ -31,6 +31,10 @@ blog/
 ├── scripts/setup.js        # First-run token generation (node scripts/setup.js)
 ├── scripts/migrate-sqlite-to-files.js # One-time migration from SQLite blog.db to flat files
 ├── scripts/deploy.sh       # Auto-deploy triggered by webhook
+├── create-the-chair/       # NPM scaffolder package (npx create-the-chair my-blog)
+│   ├── bin/create-the-chair.js # CLI entry point: clone repo, strip dev files, install, run setup
+│   ├── package.json        # Scaffolder package metadata (published to npm)
+│   └── README.md           # Scaffolder usage documentation
 ├── content/                # Posts as {slug}/post.md (YAML frontmatter + markdown body)
 ├── data/                   # analytics.jsonl (page view append-log, gitignored)
 ├── uploads/                # Extracted images by post slug (uploads/{slug}/{uuid}.{ext})
@@ -103,7 +107,7 @@ Write endpoints are rate-limited (20 req/min per IP). POST/PUT to `/api/posts` a
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `PORT` | `3000` | Server port |
+| `PORT` | `1911` | Server port |
 | `CONTENT_DIR` | `./content` | Posts directory path |
 | `DATA_DIR` | `./data` | Analytics & logs directory |
 | `SITE_URL` | `http://localhost:{PORT}` | Base URL for feeds/OpenGraph |
