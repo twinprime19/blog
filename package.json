@@ -9,7 +9,9 @@
     "start": "node server.js",
     "setup": "node scripts/setup.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "dev:worker": "wrangler dev",
+    "deploy:worker": "wrangler deploy"
   },
   "keywords": [
     "blog",
@@ -33,6 +35,7 @@
     "marked": "^17.0.4"
   },
   "devDependencies": {
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "wrangler": "^4.92.0"
   }
 }
