@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { bodyLimit } from 'hono/body-limit';
-import { serveStatic } from '@hono/node-server/serve-static';
 import { port } from './config.js';
 import { logView } from './analytics-store.js';
 import webhookRoutes from './routes/webhook-routes.js';
@@ -57,10 +56,30 @@ app.use('*', async (c, next) => {
 });
 
 // Health check
-app.get('/health', (c) => c.json({ status: 'ok', uptime: process.uptime() }));
+app.get('/health', (c) => c.json({ status: 'ok', uptime: typeof process !== 'undefined' ? process.uptime() : null }));
 
-// Static file serving for uploaded attachments
-app.use('/uploads/*', serveStatic({ root: './' }));
+// Static file serving for uploaded attachments (R2 on Workers, filesystem on Node)
+app.get('/uploads/:slug/:file', async (c) => {
+  const slug = c.req.param('slug');
+  const file = c.req.param('file');
+  const key = `${slug}/${file}`;
+
+  if (c.env?.BLOG_UPLOADS) {
+    const obj = await c.env.BLOG_UPLOADS.get(key);
+    if (!obj) return c.text('Not found', 404);
+    if (obj.httpMetadata?.contentType) c.header('Content-Type', obj.httpMetadata.contentType);
+    return c.body(obj.body);
+  }
+
+  try {
+    const { readFileSync } = await import('fs');
+    const { join } = await import('path');
+    const content = readFileSync(join(process.cwd(), 'uploads', slug, file));
+    return c.body(content);
+  } catch {
+    return c.text('Not found', 404);
+  }
+});
 
 // Mount routes
 app.route('/', webhookRoutes);
