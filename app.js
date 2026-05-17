@@ -13,6 +13,15 @@ export { port };
 
 export const app = new Hono();
 
+function mimeFromFilename(filename) {
+  const lower = String(filename || '').toLowerCase();
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.pdf')) return 'application/pdf';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  return 'application/octet-stream';
+}
+
 // CORS — configurable via CORS_ORIGIN env var (comma-separated origins, or * for all)
 const corsOrigin = process.env.CORS_ORIGIN || '*';
 app.use('*', cors({
@@ -67,7 +76,10 @@ app.get('/uploads/:slug/:file', async (c) => {
   if (c.env?.BLOG_UPLOADS) {
     const obj = await c.env.BLOG_UPLOADS.get(key);
     if (!obj) return c.text('Not found', 404);
-    if (obj.httpMetadata?.contentType) c.header('Content-Type', obj.httpMetadata.contentType);
+    const contentType = typeof obj.httpMetadata?.contentType === 'string'
+      ? obj.httpMetadata.contentType
+      : mimeFromFilename(file);
+    c.header('Content-Type', contentType);
     return c.body(obj.body);
   }
 
@@ -75,6 +87,7 @@ app.get('/uploads/:slug/:file', async (c) => {
     const { readFileSync } = await import('fs');
     const { join } = await import('path');
     const content = readFileSync(join(process.cwd(), 'uploads', slug, file));
+    c.header('Content-Type', mimeFromFilename(file));
     return c.body(content);
   } catch {
     return c.text('Not found', 404);
