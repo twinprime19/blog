@@ -1,17 +1,19 @@
 import { rmSync, mkdirSync } from 'fs';
 import { app } from '../app.js';
 import { contentDir } from '../config.js';
-import { resetIndex } from '../content-store.js';
+import { getFileStoreForTests } from '../store/index.js';
 
 export const TEST_TOKEN = 'test-token-for-vitest';
 export const WRITER_A_TOKEN = 'test-token-writer-a';
 export const WRITER_B_TOKEN = 'test-token-writer-b';
 
+const fileStore = getFileStoreForTests();
+
 // Clear all posts between tests for isolation
 export function clearPosts() {
   try { rmSync(contentDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }); } catch {}
   mkdirSync(contentDir, { recursive: true });
-  resetIndex();
+  fileStore.reset();
 }
 
 // Helper: build Authorization header

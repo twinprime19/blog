@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { bodyLimit } from 'hono/body-limit';
-import { serveStatic } from '@hono/node-server/serve-static';
 import { port } from './config.js';
 import { logView } from './analytics-store.js';
 import webhookRoutes from './routes/webhook-routes.js';
@@ -13,6 +12,15 @@ import analyticsRoutes from './routes/analytics-routes.js';
 export { port };
 
 export const app = new Hono();
+
+function mimeFromFilename(filename) {
+  const lower = String(filename || '').toLowerCase();
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.pdf')) return 'application/pdf';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  return 'application/octet-stream';
+}
 
 // CORS — configurable via CORS_ORIGIN env var (comma-separated origins, or * for all)
 const corsOrigin = process.env.CORS_ORIGIN || '*';
@@ -57,10 +65,34 @@ app.use('*', async (c, next) => {
 });
 
 // Health check
-app.get('/health', (c) => c.json({ status: 'ok', uptime: process.uptime() }));
+app.get('/health', (c) => c.json({ status: 'ok', uptime: typeof process !== 'undefined' ? process.uptime() : null }));
 
-// Static file serving for uploaded attachments
-app.use('/uploads/*', serveStatic({ root: './' }));
+// Static file serving for uploaded attachments (R2 on Workers, filesystem on Node)
+app.get('/uploads/:slug/:file', async (c) => {
+  const slug = c.req.param('slug');
+  const file = c.req.param('file');
+  const key = `${slug}/${file}`;
+
+  if (c.env?.BLOG_UPLOADS) {
+    const obj = await c.env.BLOG_UPLOADS.get(key);
+    if (!obj) return c.text('Not found', 404);
+    const contentType = typeof obj.httpMetadata?.contentType === 'string'
+      ? obj.httpMetadata.contentType
+      : mimeFromFilename(file);
+    c.header('Content-Type', contentType);
+    return c.body(obj.body);
+  }
+
+  try {
+    const { readFileSync } = await import('fs');
+    const { join } = await import('path');
+    const content = readFileSync(join(process.cwd(), 'uploads', slug, file));
+    c.header('Content-Type', mimeFromFilename(file));
+    return c.body(content);
+  } catch {
+    return c.text('Not found', 404);
+  }
+});
 
 // Mount routes
 app.route('/', webhookRoutes);

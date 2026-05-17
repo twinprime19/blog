@@ -4,11 +4,12 @@ import { join } from 'path';
 import matter from 'gray-matter';
 import { app, clearPosts, apiRequest, WRITER_A_TOKEN, WRITER_B_TOKEN } from './setup.js';
 import { contentDir } from '../config.js';
-import { resetIndex } from '../content-store.js';
+import { getFileStoreForTests } from '../store/index.js';
 
 beforeEach(() => clearPosts());
 
 const samplePost = { title: 'Test Post', content: '## Hello\n\nWorld' };
+const fileStore = getFileStoreForTests();
 
 describe('POST /api/posts', () => {
   it('creates a post and returns 201 with id and slug', async () => {
@@ -237,7 +238,7 @@ describe('Ownership — writer token scoping', () => {
       id: Date.now(), slug: 'legacy', title: 'Legacy', author: 'Admin', status: 'published',
       published_at: new Date().toISOString(), updated_at: new Date().toISOString()
     }));
-    resetIndex();
+    fileStore.reset();
     const ip = `10.0.6.${Math.floor(Math.random() * 255)}`;
     const hdrs = (t) => ({ Authorization: `Bearer ${t}`, 'Content-Type': 'application/json', 'X-Forwarded-For': ip });
     const res = await app.request('/api/posts/legacy', { method: 'DELETE', headers: hdrs(WRITER_A_TOKEN) });
