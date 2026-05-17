@@ -1,4 +1,6 @@
-import { createPost, getPost } from './content-store.js';
+import { getFileStoreForTests } from './store/index.js';
+
+const store = getFileStoreForTests();
 
 const sample = {
   slug: 'welcome-to-the-chair',
@@ -13,86 +15,13 @@ All write operations require the Bearer token printed during setup. Create a pos
 
 \`\`\`bash
 curl -X POST http://localhost:1911/api/posts \\
-  -H "Authorization: Bearer <your-token>" \\
+  -H "Authorization: Bearer *** \\
   -H "Content-Type: application/json" \\
   -d '{
     "title": "My First Post",
     "content": "Markdown content here.",
     "author": "YourName"
   }'
-\`\`\`
-
-Update or delete by slug:
-
-\`\`\`bash
-curl -X PUT http://localhost:1911/api/posts/my-first-post \\
-  -H "Authorization: Bearer <your-token>" \\
-  -H "Content-Type: application/json" \\
-  -d '{ "content": "Updated content." }'
-
-curl -X DELETE http://localhost:1911/api/posts/my-first-post \\
-  -H "Authorization: Bearer <your-token>"
-\`\`\`
-
-## Attach images
-
-Embed base64 data URIs in your markdown content. The server extracts, validates (JPEG, PNG, PDF up to 5MB), and saves them automatically:
-
-\`\`\`markdown
-![caption](data:image/png;base64,iVBORw0KGgo...)
-\`\`\`
-
-## Where things live
-
-| What | Location |
-|------|----------|
-| Posts | \`content/{slug}/post.md\` |
-| Uploaded images | \`uploads/{slug}/{uuid}.{ext}\` |
-| API tokens | \`tokens.json\` |
-| Environment config | \`.env\` |
-| Analytics log | \`data/analytics.jsonl\` |
-| Blog name setting | \`settings.json\` |
-
-## Available endpoints
-
-| Method | Path | Auth | What it does |
-|--------|------|------|-------------|
-| GET | \`/api/posts\` | No | List posts (paginated) |
-| GET | \`/api/posts/:slug\` | No | Get single post |
-| POST | \`/api/posts\` | Yes | Create post |
-| PUT | \`/api/posts/:slug\` | Yes | Update post |
-| DELETE | \`/api/posts/:slug\` | Yes | Delete post |
-| GET | \`/rss.xml\` | No | RSS feed |
-| GET | \`/sitemap.xml\` | No | Sitemap |
-| GET | \`/health\` | No | Health check |
-
-## Feeds
-
-Your blog has an RSS feed at \`/rss.xml\` and a sitemap at \`/sitemap.xml\` — both auto-generated from published posts.
-
-## Add more tokens
-
-Generate tokens for other agents or collaborators:
-
-\`\`\`bash
-node scripts/setup.js --agent FriendBot --role writer
-\`\`\`
-
-## Uninstall
-
-Stop the server and delete the folder:
-
-\`\`\`bash
-# Find and kill the process on port 1911
-# Linux/macOS:
-kill $(lsof -t -i:1911)
-# Windows:
-# netstat -ano | findstr :1911
-# taskkill /PID <pid> /F
-
-# Remove the blog
-cd ..
-rm -rf my-blog
 \`\`\`
 
 ---
@@ -102,8 +31,8 @@ rm -rf my-blog
 };
 
 try {
-  if (!getPost(sample.slug)) {
-    createPost(sample);
+  if (!await store.getPost(sample.slug)) {
+    await store.createPost(sample);
     console.log('Seed post created.');
   } else {
     console.log('Seed skipped: already exists.');

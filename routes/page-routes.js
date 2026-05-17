@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { esc, markedInstance } from '../helpers.js';
-import { listPosts, getPost } from '../content-store.js';
+import { getPostStore } from '../store/index.js';
 import { validateSlug } from '../validation.js';
 import { siteUrl, siteTitle, siteDescription } from '../config.js';
 
@@ -102,8 +102,9 @@ document.querySelectorAll('.post-full .content pre').forEach(pre => {
 </html>`;
 
 // Home
-pages.get('/', (c) => {
-  const posts = listPosts({ status: 'published', limit: 50 });
+pages.get('/', async (c) => {
+  const store = getPostStore(c);
+  const posts = await store.listPosts({ status: 'published', limit: 50 });
 
   const cards = posts.length === 0
     ? '<p style="color:var(--muted)">No posts yet.</p>'
@@ -123,12 +124,13 @@ pages.get('/', (c) => {
 });
 
 // Single post — H5: validate slug param
-pages.get('/p/:slug', (c) => {
+pages.get('/p/:slug', async (c) => {
   const slug = c.req.param('slug');
   const slugErr = validateSlug(slug);
   if (slugErr) return c.html(layout('Not Found', '<h1>Post not found</h1>'), 404);
 
-  const post = getPost(slug);
+  const store = getPostStore(c);
+  const post = await store.getPost(slug);
   if (post && post.status !== 'published') return c.html(layout('Not Found', '<h1>Post not found</h1>'), 404);
   if (!post) return c.html(layout('Not Found', '<h1>Post not found</h1>'), 404);
 

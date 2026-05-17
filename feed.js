@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { siteUrl, siteTitle, siteDescription } from './config.js';
-import { listPosts } from './content-store.js';
+import { getPostStore } from './store/index.js';
 
 const feed = new Hono();
 
@@ -16,8 +16,9 @@ const toDateStr = (d) => {
 };
 
 // RSS 2.0 feed — latest 20 published posts
-feed.get('/rss.xml', (c) => {
-  const posts = listPosts({ status: 'published', limit: 20 });
+feed.get('/rss.xml', async (c) => {
+  const store = getPostStore(c);
+  const posts = await store.listPosts({ status: 'published', limit: 20 });
 
   const items = posts.map(p => `
     <item>
@@ -46,8 +47,9 @@ feed.get('/rss.xml', (c) => {
 });
 
 // Sitemap — all published posts
-feed.get('/sitemap.xml', (c) => {
-  const posts = listPosts({ status: 'published' });
+feed.get('/sitemap.xml', async (c) => {
+  const store = getPostStore(c);
+  const posts = await store.listPosts({ status: 'published' });
 
   const urls = posts.map(p => `
   <url>
